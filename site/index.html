@@ -1,0 +1,973 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Карта экранов ROBOCALC</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --paper: #eef0f2;
+    --surface: #ffffff;
+    --surface-2: #f7f8f9;
+    --ink: #15181c;
+    --muted: #5c6673;
+    --faint: #8b95a1;
+    --line: #d2d8de;
+    --line-strong: #aeb7c0;
+    --accent: #c2410c;
+    --accent-soft: #fdeee6;
+    --role-guest: #5c6673;
+    --role-user: #0f6e63;
+    --role-admin: #c2410c;
+    --ok: #15803d;
+    --shadow: 0 1px 2px rgba(21, 24, 28, .06);
+
+    --font-body: 'IBM Plex Sans', 'Segoe UI', Roboto, system-ui, sans-serif;
+    --font-head: 'IBM Plex Sans Condensed', 'IBM Plex Sans', 'Segoe UI', sans-serif;
+    --font-mono: 'IBM Plex Mono', 'Cascadia Mono', Consolas, monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #15181c;
+      --surface: #1c2025;
+      --surface-2: #22272d;
+      --ink: #e7eaee;
+      --muted: #9aa4b0;
+      --faint: #6f7987;
+      --line: #333a42;
+      --line-strong: #4a535d;
+      --accent: #f97316;
+      --accent-soft: #33210f;
+      --role-guest: #9aa4b0;
+      --role-user: #3fb8a5;
+      --role-admin: #f97316;
+      --ok: #4ade80;
+      --shadow: 0 1px 2px rgba(0, 0, 0, .4);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --paper: #15181c;
+    --surface: #1c2025;
+    --surface-2: #22272d;
+    --ink: #e7eaee;
+    --muted: #9aa4b0;
+    --faint: #6f7987;
+    --line: #333a42;
+    --line-strong: #4a535d;
+    --accent: #f97316;
+    --accent-soft: #33210f;
+    --role-guest: #9aa4b0;
+    --role-user: #3fb8a5;
+    --role-admin: #f97316;
+    --ok: #4ade80;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .4);
+  }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 15px;
+    line-height: 1.55;
+  }
+
+  .wrap {
+    max-width: 1120px;
+    margin: 0 auto;
+    padding-inline: 20px;
+    padding-block: 40px 72px;
+    display: flex;
+    flex-direction: column;
+    gap: 44px;
+  }
+
+  /* ---------- Шапка ---------- */
+  .masthead {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    border-bottom: 2px solid var(--ink);
+    padding-bottom: 20px;
+  }
+
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+
+  h1 {
+    font-family: var(--font-head);
+    font-size: clamp(30px, 5vw, 46px);
+    line-height: 1.04;
+    letter-spacing: -.015em;
+    margin: 0;
+    text-wrap: balance;
+  }
+
+  .lede {
+    max-width: 62ch;
+    color: var(--muted);
+    margin: 0;
+  }
+
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 28px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--faint);
+  }
+
+  .meta b {
+    color: var(--ink);
+    font-weight: 500;
+  }
+
+  /* ---------- Секции ---------- */
+  section {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  h2 {
+    font-family: var(--font-head);
+    font-size: 24px;
+    letter-spacing: -.01em;
+    margin: 0;
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+  }
+
+  h2::before {
+    content: attr(data-num);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--accent);
+    letter-spacing: .08em;
+  }
+
+  h3 {
+    font-family: var(--font-head);
+    font-size: 17px;
+    margin: 8px 0 0;
+    color: var(--ink);
+  }
+
+  p { margin: 0; max-width: 72ch; }
+
+  ul { margin: 0; padding-left: 20px; max-width: 72ch; }
+  li + li { margin-top: 5px; }
+
+  code, .mono { font-family: var(--font-mono); font-size: .88em; }
+
+  code {
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: 0 4px;
+    white-space: nowrap;
+  }
+
+  /* ---------- Таблицы ---------- */
+  .scroller {
+    overflow-x: auto;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: var(--surface);
+    box-shadow: var(--shadow);
+  }
+
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    min-width: 720px;
+    font-size: 14px;
+  }
+
+  th, td {
+    text-align: left;
+    padding: 9px 14px;
+    border-bottom: 1px solid var(--line);
+    vertical-align: top;
+  }
+
+  thead th {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    background: var(--surface-2);
+    white-space: nowrap;
+  }
+
+  tbody tr:last-child td { border-bottom: 0; }
+
+  td.route {
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    white-space: nowrap;
+    color: var(--ink);
+  }
+
+  td.num { font-variant-numeric: tabular-nums; }
+
+  .chip {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    padding: 1px 7px;
+    border-radius: 3px;
+    border: 1px solid currentColor;
+    white-space: nowrap;
+  }
+
+  .chip--guest { color: var(--role-guest); }
+  .chip--user { color: var(--role-user); }
+  .chip--admin { color: var(--role-admin); }
+
+  /* ---------- Плашки ---------- */
+  .callout {
+    border-left: 3px solid var(--accent);
+    background: var(--accent-soft);
+    padding: 12px 16px;
+    border-radius: 0 4px 4px 0;
+    max-width: 78ch;
+  }
+
+  .callout b { font-weight: 600; }
+
+  .grid3 {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 14px;
+  }
+
+  .role {
+    border: 1px solid var(--line);
+    border-top: 3px solid currentColor;
+    background: var(--surface);
+    border-radius: 0 0 5px 5px;
+    padding: 14px 16px;
+    box-shadow: var(--shadow);
+  }
+
+  .role h3 {
+    margin: 0 0 6px;
+    font-size: 16px;
+    color: inherit;
+  }
+
+  .role p, .role ul { color: var(--muted); font-size: 14px; }
+  .role--guest { color: var(--role-guest); }
+  .role--user { color: var(--role-user); }
+  .role--admin { color: var(--role-admin); }
+
+  .diagram {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 12px;
+    overflow-x: auto;
+    box-shadow: var(--shadow);
+  }
+
+  /* ---------- Вайрфреймы: всегда «бумажные», в обеих темах ---------- */
+  .wfplate {
+    background: #dfe2e6;
+    border: 1px solid var(--line-strong);
+    border-radius: 6px;
+    padding: 14px;
+    overflow-x: auto;
+  }
+
+  .wf {
+    width: 1366px;
+    background: #fff;
+    border: 1px solid #9aa1ab;
+    color: #1c1f24;
+    font-family: var(--font-body);
+    font-size: 12px;
+    position: relative;
+  }
+
+  .wf--fixed { height: 768px; display: flex; flex-direction: column; }
+  .wf * { box-sizing: border-box; }
+
+  .wf-fold { position: absolute; left: 0; right: 0; top: 768px; border-top: 2px dashed #c2410c; }
+  .wf-fold span { position: absolute; right: 8px; top: -17px; font-size: 11px; color: #c2410c; background: #fff; padding: 0 4px; }
+
+  .wf-bar { display: flex; align-items: center; gap: 16px; padding: 0 24px; border-bottom: 1px solid #d6d9de; flex: 0 0 auto; }
+  .wf-bar--app { height: 56px; background: #f7f8fa; font-weight: 600; }
+  .wf-bar--proj { height: 48px; color: #4b5563; }
+  .wf-bar--act { height: 48px; }
+  .wf-right { margin-left: auto; display: flex; align-items: center; gap: 8px; font-weight: 400; }
+  .wf-chip { border: 1px solid #9aa1ab; border-radius: 10px; padding: 1px 8px; font-size: 10px; letter-spacing: .05em; text-transform: uppercase; color: #4b5563; }
+  .wf-btn { border: 1px solid #9aa1ab; border-radius: 4px; padding: 4px 11px; background: #f1f2f4; white-space: nowrap; font-size: 11.5px; }
+  .wf-btn--pri { background: #d9e2f5; border-color: #6d8ec9; font-weight: 600; }
+  .wf-btn--gh { background: transparent; border-style: dashed; }
+  .wf-btn--off { color: #9aa1ab; background: #f7f8fa; }
+
+  .wf-steps { display: flex; align-items: center; height: 48px; padding: 0 24px; gap: 7px; border-bottom: 1px solid #d6d9de; background: #fbfbfc; flex: 0 0 auto; list-style: none; margin: 0; }
+  .wf-steps li { display: flex; align-items: center; gap: 5px; color: #9aa1ab; white-space: nowrap; }
+  .wf-steps li + li::before { content: ''; width: 14px; border-top: 1px solid #d6d9de; margin-right: 5px; }
+  .wf-steps b { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; border: 1px solid currentColor; border-radius: 50%; font-size: 10px; font-weight: 500; }
+  .wf-steps .done { color: #4b5563; }
+  .wf-steps .cur { color: #1c1f24; font-weight: 700; }
+  .wf-steps .cur b { background: #d9e2f5; }
+
+  .wf-body { display: grid; grid-template-columns: 240px 1fr 320px; flex: 1 1 auto; min-height: 0; }
+  .wf-col { padding: 16px; }
+  .wf-col--nav { border-right: 1px solid #d6d9de; background: #fbfbfc; }
+  .wf-col--form { overflow-y: auto; }
+  .wf-col--hint { border-left: 1px solid #d6d9de; background: #fbfbfc; }
+
+  .wf-lab { font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: #9aa1ab; margin: 0 0 8px; }
+  .wf-nav { list-style: none; margin: 0 0 14px; padding: 0; }
+  .wf-nav li { display: flex; justify-content: space-between; gap: 8px; padding: 6px 8px; border-radius: 4px; color: #4b5563; }
+  .wf-nav li.cur { background: #eef2fa; color: #1c1f24; font-weight: 600; }
+  .wf-prog { height: 6px; background: #e5e7eb; border-radius: 3px; overflow: hidden; margin: 6px 0; }
+  .wf-prog i { display: block; height: 100%; background: #6d8ec9; }
+  .wf-note { border: 1px dashed #9aa1ab; border-radius: 4px; padding: 8px; color: #4b5563; line-height: 1.45; }
+  .wf-note--warn { border-color: #c2410c; color: #9a3412; }
+  .wf-note--pap { background: #fff; }
+  .wf-note ul { margin: 6px 0 0; padding-left: 16px; }
+  .wf-note p { margin: 6px 0 0; max-width: none; }
+
+  .wf-sec { margin-bottom: 16px; }
+  .wf-sec > h4 { display: flex; align-items: center; gap: 8px; font-family: var(--font-body); font-weight: 700; font-size: 13px; margin: 0 0 10px; }
+  .wf-sec > h4::after { content: ''; flex: 1; border-top: 1px solid #e5e7eb; }
+  .wf-g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .wf-wide { grid-column: 1 / -1; }
+  .wf-flab { display: block; margin-bottom: 4px; color: #4b5563; }
+  .wf-req { color: #c2410c; }
+  .wf-in { display: flex; align-items: center; justify-content: space-between; gap: 8px; height: 32px; padding: 0 10px; border: 1px solid #9aa1ab; border-radius: 4px; background: #fff; }
+  .wf-in--empty { color: #9aa1ab; }
+  .wf-in--err { border-color: #c2410c; background: #fff7ed; }
+  .wf-unit { color: #6b7280; font-size: 11px; white-space: nowrap; }
+  .wf-msg { margin-top: 4px; color: #9a3412; line-height: 1.35; }
+  .wf-hint { margin-top: 4px; color: #6b7280; }
+
+  .wf-foot { display: flex; align-items: center; gap: 12px; height: 64px; padding: 0 24px; border-top: 1px solid #d6d9de; background: #f7f8fa; flex: 0 0 auto; }
+  .wf-foot .wf-right { gap: 12px; }
+
+  .wf-cont { padding: 16px 24px; }
+  .wf-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+  .wf-kpi { border: 1px solid #d6d9de; border-radius: 6px; padding: 10px 12px; background: #fbfbfc; height: 92px; }
+  .wf-kpi em { font-style: normal; font-size: 10px; letter-spacing: .06em; text-transform: uppercase; color: #9aa1ab; }
+  .wf-kpi strong { display: block; font-size: 22px; margin: 4px 0 2px; font-variant-numeric: tabular-nums; }
+  .wf-kpi span { color: #6b7280; }
+
+  .wf-bt { display: flex; align-items: center; gap: 12px; font-weight: 700; margin: 0 0 8px; font-size: 13px; }
+  .wf-bt .wf-btn { margin-left: auto; font-weight: 400; }
+
+  .wf table { width: 100%; min-width: 0; border-collapse: collapse; background: #fff; font-size: 11.5px; }
+  .wf th, .wf td { border: 1px solid #d6d9de; padding: 5px 10px; text-align: right; white-space: nowrap; color: #1c1f24; font-variant-numeric: tabular-nums; }
+  .wf th:first-child, .wf td:first-child { text-align: left; width: 250px; font-variant-numeric: normal; }
+  .wf thead th { background: #f1f2f4; vertical-align: top; font-family: var(--font-body); font-size: 11.5px; letter-spacing: 0; text-transform: none; font-weight: 600; }
+  .wf thead th small { display: block; font-weight: 400; color: #6b7280; }
+  .wf tr.grp td { background: #fbfbfc; font-weight: 700; }
+  .wf tr.sub td:first-child { padding-left: 24px; color: #6b7280; }
+  .wf .base { background: #f7f8fa; color: #6b7280; }
+  .wf .best { color: #15803d; font-weight: 700; }
+  .wf .exp { color: #1f5fd0; }
+
+  .wf-two { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 16px 0; }
+  .wf-chart { border: 1px dashed #9aa1ab; border-radius: 6px; padding: 12px; background: #fbfbfc; }
+  .wf-chart h5 { font-family: var(--font-body); font-size: 12px; margin: 0 0 8px; display: flex; gap: 8px; align-items: center; }
+  .wf-stub { display: flex; align-items: center; justify-content: center; text-align: center; height: 132px; color: #6b7280; border: 1px solid #e5e7eb; padding: 8px; line-height: 1.5; background: repeating-linear-gradient(135deg, #fff, #fff 8px, #f3f4f6 8px, #f3f4f6 16px); }
+  .wf-bars { display: grid; gap: 6px; }
+  .wf-bars div { display: grid; grid-template-columns: 132px 1fr 62px; align-items: center; gap: 8px; }
+  .wf-bars i { height: 12px; background: #c7d2e8; border: 1px solid #6d8ec9; display: block; }
+  .wf-bars span:last-child { text-align: right; font-variant-numeric: tabular-nums; }
+  .wf-assum { border: 1px solid #d6d9de; border-left: 4px solid #6d8ec9; border-radius: 4px; padding: 10px 12px; background: #fbfbfc; line-height: 1.5; margin-bottom: 14px; }
+
+  .caption {
+    font-size: 13px;
+    color: var(--muted);
+    max-width: 78ch;
+  }
+
+  footer {
+    border-top: 1px solid var(--line);
+    padding-top: 18px;
+    font-size: 13px;
+    color: var(--faint);
+  }
+
+  @media (max-width: 720px) {
+    .wf-plate-hint { display: block; }
+  }
+</style>
+<style>
+  /* Автономная страница: базовый сброс (в опубликованном варианте его давал хост) */
+  :root { color-scheme: light dark; }
+  * { box-sizing: border-box; }
+  body { margin: 0; }
+  img { max-width: 100%; }
+  pre.mermaid { font-family: var(--font-mono); font-size: 12px; line-height: 1.5; color: var(--muted); white-space: pre; margin: 0; }
+  pre.mermaid svg { max-width: 100%; height: auto; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="masthead">
+    <div class="eyebrow">Фронтенд · черновик 0.1 · 19.09.2026</div>
+    <h1>Карта экранов ROBOCALC</h1>
+    <p class="lede">Все экраны сервиса расчёта роботизации, кто из трёх ролей что видит, как между
+      экранами ходят — и два первых вайрфрейма: ввод параметров объекта и итоговый дашборд сравнения
+      сценариев.</p>
+    <div class="meta">
+      <span>Владелец: <b>Владимиров</b> — визард и backend-glue</span>
+      <span>Источник полей: <b>contracts/*.md</b> (черновые)</span>
+      <span>Рабочее разрешение: <b>от 1366×768</b></span>
+    </div>
+  </header>
+
+  <section>
+    <h2 data-num="01">Три роли</h2>
+    <div class="grid3">
+      <div class="role role--guest">
+        <h3>Гость</h3>
+        <p>Каталог решений и демо-расчёт. Черновик живёт в sessionStorage, сохранения и экспорта нет.
+          При попытке уйти в личный кабинет — вход с <code>?next=</code>.</p>
+      </div>
+      <div class="role role--user">
+        <h3>Пользователь</h3>
+        <p>Свои проекты, визард из восьми шагов, история версий, итоговый дашборд и экспорт.
+          Проекты изолированы по <code>owner_user_id</code>.</p>
+      </div>
+      <div class="role role--admin">
+        <h3>Админ</h3>
+        <p>Всё пользовательское плюс каталог, правила совместимости, справочники, дефолты экономики
+          и пользователи.</p>
+      </div>
+    </div>
+    <div class="callout">
+      <b>Два разных отказа.</b> Гость на <code>/projects/*</code> едет на вход и возвращается туда,
+      куда шёл. Вошедший без прав на <code>/admin/*</code> получает 403 — он уже вошёл, проблема в
+      правах. Чужой проект отдаёт 404, а не 403: не подтверждаем, что такой проект существует.
+    </div>
+  </section>
+
+  <section>
+    <h2 data-num="02">Публичная зона</h2>
+    <div class="scroller">
+      <table>
+        <thead>
+          <tr><th>Маршрут</th><th>Экран</th><th>Доступ</th><th>Назначение</th><th>Данные</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="route">/</td><td>Главная</td><td><span class="chip chip--guest">все</span></td><td>Что считает сервис, как это работает, переход в демо</td><td>—</td></tr>
+          <tr><td class="route">/catalog</td><td>Каталог решений</td><td><span class="chip chip--guest">все</span></td><td>Фильтры: тип решения, отрасль, грузоподъёмность, навигация, доступность</td><td class="mono">CatalogItem</td></tr>
+          <tr><td class="route">/catalog/:itemId</td><td>Карточка решения</td><td><span class="chip chip--guest">все</span></td><td>Все группы характеристик + «подобрать под мой объект»</td><td class="mono">CatalogItem</td></tr>
+          <tr><td class="route">/demo</td><td>Демо-расчёт</td><td><span class="chip chip--guest">гость</span></td><td>Визард без сохранения: шаги 1–5, один сценарий</td><td class="mono">ProjectInput</td></tr>
+          <tr><td class="route">/login</td><td>Вход</td><td><span class="chip chip--guest">гость</span></td><td>Возврат на запрошенный экран по <code>?next=</code></td><td>—</td></tr>
+          <tr><td class="route">/register</td><td>Регистрация</td><td><span class="chip chip--guest">гость</span></td><td>Создание аккаунта и перенос демо-черновика в проект</td><td>—</td></tr>
+          <tr><td class="route">/forgot-password</td><td>Восстановление пароля</td><td><span class="chip chip--guest">гость</span></td><td>Ссылка для смены пароля на e-mail</td><td>—</td></tr>
+          <tr><td class="route">/403 · /404</td><td>Ошибки доступа</td><td><span class="chip chip--guest">все</span></td><td>Объяснение и куда идти дальше</td><td>—</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2 data-num="03">Личный кабинет</h2>
+    <div class="scroller">
+      <table>
+        <thead>
+          <tr><th>Маршрут</th><th>Экран</th><th>Назначение</th><th>Данные</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="route">/projects</td><td>Мои проекты</td><td>Название, тип объекта, статус, дата изменения, лучший срок окупаемости. Поиск, фильтры, копирование, архив</td><td class="mono">ProjectRecord[]</td></tr>
+          <tr><td class="route">/projects/new</td><td>Новый проект</td><td>Название и тип объекта — дальше сразу шаг 2</td><td class="mono">ProjectRecord</td></tr>
+          <tr><td class="route">/projects/:id</td><td>Обзор проекта</td><td>Хаб: статус, прогресс по шагам, краткие KPI, версии</td><td class="mono">ProjectRecord</td></tr>
+          <tr><td class="route">/projects/:id/versions</td><td>История версий</td><td>Снапшоты: открыть только для чтения или сделать текущей копией</td><td class="mono">ProjectVersion[]</td></tr>
+          <tr><td class="route">/projects/:id/wizard/:step</td><td>Визард</td><td>Восемь шагов, см. раздел 05</td><td>см. 05</td></tr>
+          <tr><td class="route">/projects/:id/dashboard</td><td>Итоговый дашборд</td><td>Сравнение сценариев, чувствительность, допущения, экспорт</td><td class="mono">EconomicsResult[]</td></tr>
+          <tr><td class="route">/projects/:id/report</td><td>Отчёт</td><td>Печатная вёрстка того, что уходит в PDF</td><td class="mono">ProjectVersion</td></tr>
+          <tr><td class="route">/profile</td><td>Профиль</td><td>Имя, e-mail, пароль, организация</td><td>—</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2 data-num="04">Админ-зона</h2>
+    <div class="scroller">
+      <table>
+        <thead>
+          <tr><th>Маршрут</th><th>Экран</th><th>Назначение</th><th>Данные</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="route">/admin</td><td>Сводка</td><td>Позиций в каталоге, из них непроверенных, правил, устаревших записей, пользователей</td><td>агрегаты</td></tr>
+          <tr><td class="route">/admin/catalog</td><td>Каталог: управление</td><td>Таблица позиций, массовые действия, импорт и экспорт CSV/Excel</td><td class="mono">CatalogItem[]</td></tr>
+          <tr><td class="route">/admin/catalog/:id</td><td>Позиция каталога</td><td>Шесть групп полей: идентификация, технические, инфраструктура, экономика, применимость, качество данных</td><td class="mono">CatalogItem</td></tr>
+          <tr><td class="route">/admin/rules</td><td>Правила совместимости</td><td>Условие по оборудованию × условие по объекту → вердикт и причина</td><td class="mono">CompatibilityRule[]</td></tr>
+          <tr><td class="route">/admin/dictionaries</td><td>Справочники</td><td>Типы решений, процессы, зоны, режимы работы, ограничения планировки</td><td>справочники</td></tr>
+          <tr><td class="route">/admin/assumptions</td><td>Допущения расчёта</td><td>Тариф энергии, ставка, резерв CAPEX, горизонт TCO, наборы чувствительности</td><td class="mono">EconInput</td></tr>
+          <tr><td class="route">/admin/users</td><td>Пользователи</td><td>Список, роли, блокировка</td><td>—</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="caption">Правки админа в каталоге меняют результат подбора на шаге 3 — но не трогают уже
+      сохранённые версии проектов: там лежат снапшоты.</p>
+  </section>
+
+  <section>
+    <h2 data-num="05">Восемь шагов визарда</h2>
+    <p>Маршрут <code>/projects/:id/wizard/:step</code>. Шаг адресуется слагом, а не номером, чтобы
+      порядок можно было менять без ломки ссылок.</p>
+    <div class="scroller">
+      <table>
+        <thead>
+          <tr><th>#</th><th>Слаг</th><th>Шаг</th><th>Что делает пользователь</th><th>Результат</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="num">1</td><td class="route">object</td><td>Тип объекта</td><td>Склад, аэропорт или медучреждение — с пояснением, какие данные понадобятся</td><td class="mono">object_type</td></tr>
+          <tr><td class="num">2</td><td class="route">params</td><td>Параметры объекта</td><td>Форма с валидацией, единицами, подсказками, импортом из Excel/CSV</td><td class="mono">ProjectInput.params</td></tr>
+          <tr><td class="num">3</td><td class="route">matching</td><td>Подбор</td><td>Ранжированные кандидаты с разбором «почему так», ручные правки</td><td class="mono">MatchResult</td></tr>
+          <tr><td class="num">4</td><td class="route">comparison</td><td>Сравнение</td><td>2–4 решения бок о бок по ТТХ, количество единиц, фиксация состава</td><td class="mono">selected_equipment</td></tr>
+          <tr><td class="num">5</td><td class="route">economics</td><td>Экономика</td><td>Часы работы, загрузка, стоимость персонала, горизонт → CAPEX/OPEX/ROI</td><td class="mono">EconomicsResult</td></tr>
+          <tr><td class="num">6</td><td class="route">scenarios</td><td>Сценарии</td><td>Покупка, RaaS, кредит, свой; what-if и чувствительность по трём параметрам</td><td class="mono">EconomicsResult[]</td></tr>
+          <tr><td class="num">7</td><td class="route">topology</td><td>Визуализация</td><td>Зоны, маршруты, точки, расстановка роботов, проигрывание симуляции</td><td class="mono">TopologyConfig</td></tr>
+          <tr><td class="num">8</td><td class="route">export</td><td>Сохранение и экспорт</td><td>Сводка, сохранение версии, выгрузка PDF/Excel</td><td class="mono">ProjectVersion</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <ul>
+      <li>Назад — в один клик на любой пройденный шаг; вперёд «через голову» нельзя.</li>
+      <li>Шаг 7 не блокирует шаг 8: визуализация полезная, но экономика считается и без неё.</li>
+      <li>Правка параметров на шаге 2 помечает шаги 3–6 как устаревшие, но <b>не стирает</b> их —
+        пересчитывать или нет, решает пользователь.</li>
+      <li>Шаги 3, 6 и 7 могут считаться до 60 секунд: экран статуса с прогрессом, а не блокирующий
+        спиннер — со страницы можно уйти.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2 data-num="06">Граф переходов</h2>
+    <div class="diagram">
+<pre class="mermaid">
+graph TD
+  Landing["/ Главная"] --> Catalog["/catalog Каталог"]
+  Landing --> Demo["/demo Демо-расчёт"]
+  Landing --> Login["/login Вход"]
+  Catalog --> Item["/catalog/:id Карточка решения"]
+  Item --> Demo
+  Demo -->|"сохранить / экспорт"| Register["/register Регистрация"]
+  Login --> Projects["/projects Мои проекты"]
+  Register -->|"перенос черновика"| Projects
+  Projects --> NewProject["/projects/new Новый проект"]
+  Projects --> Overview["/projects/:id Обзор проекта"]
+  NewProject --> W2
+  Overview --> Versions["/versions История версий"]
+  Overview --> Dashboard["/dashboard Итоговый дашборд"]
+  Overview --> W1
+
+  subgraph Wizard["Визард /projects/:id/wizard/:step"]
+    W1["1 object Тип объекта"] --> W2["2 params Параметры"]
+    W2 --> W3["3 matching Подбор"]
+    W3 --> W4["4 comparison Сравнение"]
+    W4 --> W5["5 economics Экономика"]
+    W5 --> W6["6 scenarios Сценарии"]
+    W6 --> W7["7 topology Визуализация"]
+    W7 --> W8["8 export Сохранение и экспорт"]
+    W6 -.->|"шаг 7 не обязателен"| W8
+  end
+
+  W8 --> Dashboard
+  Dashboard --> Report["/report Отчёт"]
+  Dashboard -->|"пересчитать"| W6
+  Versions -->|"открыть снапшот"| Dashboard
+
+  Login -.->|"роль admin"| Admin["/admin Сводка"]
+  Admin --> AdminCatalog["/admin/catalog Каталог"]
+  Admin --> AdminRules["/admin/rules Правила совместимости"]
+  Admin --> AdminDict["/admin/dictionaries Справочники"]
+  Admin --> AdminAssum["/admin/assumptions Допущения"]
+  Admin --> AdminUsers["/admin/users Пользователи"]
+  AdminCatalog --> AdminItem["/admin/catalog/:id Позиция"]
+  AdminItem -.->|"влияет на подбор"| W3
+</pre>
+    </div>
+  </section>
+
+  <section>
+    <h2 data-num="07">Что урезано у гостя</h2>
+    <div class="scroller">
+      <table>
+        <thead><tr><th>Возможность</th><th>Гость</th><th>Пользователь</th></tr></thead>
+        <tbody>
+          <tr><td>Шаги 1–5: от типа объекта до экономики</td><td>да</td><td>да</td></tr>
+          <tr><td>Несколько сценариев на шаге 6</td><td>только один</td><td>минимум три</td></tr>
+          <tr><td>2D/3D и симуляция на шаге 7</td><td>нет, заглушка с примером</td><td>да</td></tr>
+          <tr><td>Сохранение проекта</td><td>нет</td><td>да</td></tr>
+          <tr><td>Экспорт PDF и Excel</td><td>нет</td><td>да</td></tr>
+          <tr><td>Сохранение между сессиями</td><td>нет, sessionStorage</td><td>да</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>На каждом заблокированном месте — не молчащая серая кнопка, а фраза: «Чтобы сохранить расчёт и
+      сравнить сценарии, зарегистрируйтесь — введённые данные перенесутся в проект».</p>
+  </section>
+
+  <section>
+    <h2 data-num="08">Макет: шаг 2 «Параметры объекта»</h2>
+    <p class="caption">Кадр — ровно 1366×768. Прокручивается только колонка формы: список разделов слева
+      и кнопка «Далее» внизу видны всегда. Единица измерения стоит внутри поля, ошибка говорит, что
+      сделать, правая колонка объясняет, на что влияет введённое. Экран шире окна — макет
+      прокручивается по горизонтали внутри рамки.</p>
+    <div class="wfplate">
+      <div class="wf wf--fixed">
+        <div class="wf-bar wf-bar--app">
+          <span>ROBOCALC</span><span style="font-weight:400">Каталог</span><span style="font-weight:400">Мои проекты</span>
+          <span class="wf-right">Иван Петров ▾</span>
+        </div>
+        <div class="wf-bar wf-bar--proj">
+          <span>‹ К проектам</span><strong style="color:#1c1f24">Склад на Ленинградке ✎</strong>
+          <span class="wf-chip">Черновик</span><span>Сохранено в 12:04</span>
+          <span class="wf-right"><span class="wf-btn">Версии</span><span class="wf-btn">Дашборд</span></span>
+        </div>
+        <ol class="wf-steps">
+          <li class="done"><b>1</b>Тип объекта</li>
+          <li class="cur"><b>2</b>Параметры</li>
+          <li><b>3</b>Подбор</li>
+          <li><b>4</b>Сравнение</li>
+          <li><b>5</b>Экономика</li>
+          <li><b>6</b>Сценарии</li>
+          <li><b>7</b>Визуализация</li>
+          <li><b>8</b>Сохранение и экспорт</li>
+        </ol>
+        <div class="wf-body">
+          <aside class="wf-col wf-col--nav">
+            <p class="wf-lab">Разделы</p>
+            <ul class="wf-nav">
+              <li><span>✓ Помещение</span><span>6 / 6</span></li>
+              <li class="cur"><span>Режим и объём</span><span>3 / 5</span></li>
+              <li><span>Груз</span><span>1 / 3</span></li>
+              <li><span>Персонал</span><span>0 / 2</span></li>
+            </ul>
+            <p class="wf-lab" style="margin-bottom:2px">Заполнено 10 из 16</p>
+            <div class="wf-prog"><i style="width:62%"></i></div>
+            <div class="wf-note wf-note--warn" style="margin-top:16px">
+              1 ошибка в разделе «Режим и объём»<br><u>Перейти к ней →</u>
+            </div>
+          </aside>
+
+          <section class="wf-col wf-col--form">
+            <div class="wf-bt" style="font-size:15px">Параметры склада
+              <span class="wf-btn wf-btn--gh">Импорт из Excel / CSV ⭱</span>
+            </div>
+            <p style="color:#6b7280;margin:0 0 14px">Поля со звёздочкой обязательны. Единицы измерения
+              указаны в каждом поле — вводите числа как есть.</p>
+
+            <div class="wf-sec">
+              <h4>Режим и объём операций</h4>
+              <div class="wf-g2">
+                <div>
+                  <span class="wf-flab">Режим работы <span class="wf-req">*</span></span>
+                  <div class="wf-in"><span>24/7</span><span class="wf-unit">▾</span></div>
+                  <div class="wf-hint">из справочника, можно добавить свой</div>
+                </div>
+                <div>
+                  <span class="wf-flab">Текущая производительность <span class="wf-req">*</span></span>
+                  <div class="wf-in"><span>120</span><span class="wf-unit">операций/час</span></div>
+                  <div class="wf-hint">сколько объект делает сейчас, до роботизации</div>
+                </div>
+                <div>
+                  <span class="wf-flab">Приёмка, входящие операции <span class="wf-req">*</span></span>
+                  <div class="wf-in"><span>1 200</span><span class="wf-unit">операций/сутки</span></div>
+                </div>
+                <div>
+                  <span class="wf-flab">Внутрискладские операции <span class="wf-req">*</span></span>
+                  <div class="wf-in"><span>3 400</span><span class="wf-unit">операций/сутки</span></div>
+                </div>
+                <div class="wf-wide">
+                  <span class="wf-flab">Отгрузка, исходящие операции <span class="wf-req">*</span></span>
+                  <div class="wf-in wf-in--err"><span>0</span><span class="wf-unit">операций/сутки</span></div>
+                  <div class="wf-msg">Укажите значение больше 0 — иначе подбор не найдёт технику под
+                    отгрузку. Если отгрузки нет, отметьте «Отгрузки нет» ниже.</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="wf-sec">
+              <h4>Груз</h4>
+              <div class="wf-g2">
+                <div>
+                  <span class="wf-flab">Масса грузовой единицы <span class="wf-req">*</span></span>
+                  <div class="wf-in wf-in--empty"><span>не заполнено</span><span class="wf-unit">кг</span></div>
+                </div>
+                <div>
+                  <span class="wf-flab">Габариты грузовой единицы <span class="wf-req">*</span></span>
+                  <div class="wf-in"><span>1200 × 800 × 1450</span><span class="wf-unit">мм, Д×Ш×В</span></div>
+                </div>
+                <div>
+                  <span class="wf-flab">Количество SKU <span class="wf-req">*</span></span>
+                  <div class="wf-in wf-in--empty"><span>не заполнено</span><span class="wf-unit">шт.</span></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="wf-sec">
+              <h4>Помещение</h4>
+              <div class="wf-g2">
+                <div>
+                  <span class="wf-flab">Площадь склада <span class="wf-req">*</span></span>
+                  <div class="wf-in"><span>12 500</span><span class="wf-unit">м²</span></div>
+                </div>
+                <div>
+                  <span class="wf-flab">Доступная площадь под роботизацию</span>
+                  <div class="wf-in"><span>4 200</span><span class="wf-unit">м²</span></div>
+                  <div class="wf-hint">необязательно; не больше площади склада</div>
+                </div>
+                <div>
+                  <span class="wf-flab">Тип хранения <span class="wf-req">*</span></span>
+                  <div class="wf-in"><span>Фронтальные стеллажи</span><span class="wf-unit">▾</span></div>
+                </div>
+                <div>
+                  <span class="wf-flab">Протяжённость маршрутов <span class="wf-req">*</span></span>
+                  <div class="wf-in"><span>1 800</span><span class="wf-unit">м</span></div>
+                </div>
+                <div class="wf-wide">
+                  <span class="wf-flab">Рабочие зоны</span>
+                  <div class="wf-in"><span>Приёмка ✕ · Хранение ✕ · Комплектация ✕ · Отгрузка ✕ &nbsp; + Добавить</span></div>
+                </div>
+                <div class="wf-wide">
+                  <span class="wf-flab">Ограничения планировки</span>
+                  <div class="wf-in"><span>Проходы 2,2 м ✕ · Колонны 6×6 м ✕ &nbsp; + Добавить</span></div>
+                  <div class="wf-hint">влияет на подбор: техника с требованием прохода шире 2,2 м будет исключена</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="wf-sec">
+              <h4>Персонал</h4>
+              <div class="wf-g2">
+                <div>
+                  <span class="wf-flab">Численность персонала <span class="wf-req">*</span></span>
+                  <div class="wf-in wf-in--empty"><span>не заполнено</span><span class="wf-unit">чел.</span></div>
+                </div>
+                <div>
+                  <span class="wf-flab">Стоимость одного сотрудника <span class="wf-req">*</span></span>
+                  <div class="wf-in wf-in--empty"><span>не заполнено</span><span class="wf-unit">₽/мес</span></div>
+                  <div class="wf-hint">с налогами и взносами — из этого считается эффект</div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <aside class="wf-col wf-col--hint">
+            <p class="wf-lab">Подсказка</p>
+            <div class="wf-note wf-note--pap">
+              <strong>Операции в сутки</strong>
+              <p>Приёмку, внутренние перемещения и отгрузку считаем отдельно: у них разная нагрузка на
+                технику и разные маршруты.</p>
+              <p>Если учёт ведётся только суммарно — впишите всё во «Внутрискладские операции», подбор
+                это допускает.</p>
+            </div>
+            <p class="wf-lab" style="margin-top:18px">Что дальше</p>
+            <div class="wf-note">
+              По этим данным на шаге 3 подберём технику из каталога:
+              <ul>
+                <li>грузоподъёмность ≥ массы грузовой единицы</li>
+                <li>ширина прохода ≤ ограничений планировки</li>
+                <li>производительность покрывает операции в сутки</li>
+              </ul>
+            </div>
+            <p class="wf-lab" style="margin-top:18px">Черновик</p>
+            <div class="wf-note">Автосохранение каждые 2 секунды. Можно закрыть вкладку и вернуться —
+              введённое не пропадёт.</div>
+          </aside>
+        </div>
+        <div class="wf-foot">
+          <span class="wf-btn">← Назад: тип объекта</span>
+          <span class="wf-right">
+            <span style="color:#6b7280">Заполните 4 обязательных поля и исправьте 1 ошибку</span>
+            <span class="wf-btn">Сохранить черновик</span>
+            <span class="wf-btn wf-btn--off">Далее: подбор →</span>
+          </span>
+        </div>
+      </div>
+    </div>
+    <p class="caption">Форма собирается из описания полей — тип, единица, диапазон, подсказка,
+      зависимости. Один компонент и три описания (склад, аэропорт, медучреждение), а не три свёрстанные
+      формы: новый <code>ObjectType</code> = новое описание.</p>
+  </section>
+
+  <section>
+    <h2 data-num="09">Макет: дашборд сравнения сценариев</h2>
+    <p class="caption">Красная линия — граница первого экрана при высоте 768. Над ней: четыре KPI и вся
+      таблица сравнения, то есть ответ «какой сценарий выгоднее и когда окупится». Графики,
+      чувствительность и допущения — под прокруткой.</p>
+    <div class="wfplate">
+      <div class="wf">
+        <div class="wf-fold"><span>граница первого экрана — 768 px</span></div>
+        <div class="wf-bar wf-bar--app">
+          <span>ROBOCALC</span><span style="font-weight:400">Каталог</span><span style="font-weight:400">Мои проекты</span>
+          <span class="wf-right">Иван Петров ▾</span>
+        </div>
+        <div class="wf-bar wf-bar--proj">
+          <span>‹ К проектам</span><strong style="color:#1c1f24">Склад на Ленинградке</strong>
+          <span class="wf-chip">Рассчитан</span><span>Версия 3 от 18.09.2026</span>
+          <span class="wf-right"><span class="wf-btn">Версии</span></span>
+        </div>
+        <div class="wf-bar wf-bar--act">
+          <strong>Дашборд</strong><span style="color:#6b7280">Отчёт</span><span style="color:#6b7280">Визард</span>
+          <span class="wf-right">
+            <span style="color:#6b7280">Горизонт расчёта:</span>
+            <span class="wf-btn">5 лет ▾</span>
+            <span class="wf-btn">Пересчитать</span>
+            <span class="wf-btn wf-btn--pri">Экспорт ▾</span>
+          </span>
+        </div>
+        <div class="wf-cont">
+          <div class="wf-kpis">
+            <div class="wf-kpi"><em>Лучший сценарий</em><strong>Покупка</strong><span>по сроку окупаемости из 4 сценариев</span></div>
+            <div class="wf-kpi"><em>Срок окупаемости</em><strong>2,4 года</strong><span>простая окупаемость, без дисконтирования</span></div>
+            <div class="wf-kpi"><em>Годовой эффект</em><strong>18,4 млн ₽</strong><span>относительно базового сценария</span></div>
+            <div class="wf-kpi"><em>ROI за 5 лет</em><strong>108 %</strong><span>TCO 96,2 млн ₽</span></div>
+          </div>
+
+          <div class="wf-bt">Сравнение сценариев<span class="wf-btn">+ Добавить сценарий</span></div>
+          <table>
+            <thead>
+              <tr>
+                <th>Показатель</th>
+                <th class="base">Базовый<small>без роботизации</small></th>
+                <th>Покупка ★<small>собственные средства</small></th>
+                <th>RaaS<small>роботы как услуга</small></th>
+                <th>Кредит 18 %<small>свой сценарий</small></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="grp"><td>CAPEX, ₽</td><td class="base">0</td><td>42 500 000</td><td>1 200 000</td><td>42 500 000</td></tr>
+              <tr class="sub"><td>оборудование</td><td class="base">0</td><td>33 000 000</td><td>0</td><td>33 000 000</td></tr>
+              <tr class="sub"><td>ПО и лицензии</td><td class="base">0</td><td>3 200 000</td><td>0</td><td>3 200 000</td></tr>
+              <tr class="sub"><td>внедрение и интеграция</td><td class="base">0</td><td>2 400 000</td><td>1 200 000</td><td>2 400 000</td></tr>
+              <tr class="sub"><td class="exp">▸ ещё 4 статьи</td><td class="base"></td><td></td><td></td><td></td></tr>
+              <tr class="grp"><td>OPEX, ₽/год</td><td class="base">31 200 000</td><td>12 800 000</td><td>21 600 000</td><td>16 900 000</td></tr>
+              <tr class="sub"><td>изменение к базовому</td><td class="base">—</td><td>−18 400 000</td><td>−9 600 000</td><td>−14 300 000</td></tr>
+              <tr class="sub"><td class="exp">▸ по статьям: сервис, ПО, энергия, персонал…</td><td class="base"></td><td></td><td></td><td></td></tr>
+              <tr><td>Годовой эффект, ₽</td><td class="base">—</td><td>18 400 000</td><td>9 600 000</td><td>14 300 000</td></tr>
+              <tr><td>Срок окупаемости, лет</td><td class="base">—</td><td class="best">2,4 ★</td><td>0,2</td><td>3,1</td></tr>
+              <tr><td>ROI за 5 лет, %</td><td class="base">—</td><td>108</td><td class="best">412 ★</td><td>67</td></tr>
+              <tr><td>TCO за 5 лет, ₽</td><td class="base">156 000 000</td><td class="best">96 200 000 ★</td><td>109 200 000</td><td>112 800 000</td></tr>
+              <tr>
+                <td></td>
+                <td class="base"><span class="wf-btn">Открыть</span></td>
+                <td><span class="wf-btn">Открыть</span></td>
+                <td><span class="wf-btn">Открыть</span></td>
+                <td><span class="wf-btn">Открыть</span> <span class="wf-btn">Удалить</span></td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="wf-two">
+            <div class="wf-chart">
+              <h5>Накопленный денежный поток, 5 лет</h5>
+              <div class="wf-stub">Линии по сценариям и точка безубыточности.<br>
+                В <span class="mono">EconomicsResult</span> пока нет ряда по годам — см. открытый вопрос 1.</div>
+              <div style="color:#6b7280;margin-top:6px">Покупка · RaaS · Кредит 18 % — базовый как ноль отсчёта</div>
+            </div>
+            <div class="wf-chart">
+              <h5>Структура затрат: Покупка <span class="wf-btn">CAPEX / OPEX</span></h5>
+              <div class="wf-bars">
+                <div><span>Оборудование</span><i style="width:78%"></i><span>33,0 млн</span></div>
+                <div><span>ПО и лицензии</span><i style="width:8%"></i><span>3,2 млн</span></div>
+                <div><span>Внедрение</span><i style="width:6%"></i><span>2,4 млн</span></div>
+                <div><span>Пусконаладка</span><i style="width:4%"></i><span>1,6 млн</span></div>
+                <div><span>Обучение</span><i style="width:2%"></i><span>0,4 млн</span></div>
+                <div><span>Резерв 10 %</span><i style="width:5%"></i><span>1,9 млн</span></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="wf-bt">Чувствительность — сценарий «Покупка»<span class="wf-btn">Сменить сценарий ▾</span></div>
+          <table style="margin-bottom:14px">
+            <thead><tr><th>Параметр</th><th>Изменение</th><th>Срок окупаемости, лет</th><th>ROI, %</th><th>Вывод</th></tr></thead>
+            <tbody>
+              <tr><td>Стоимость оборудования</td><td>+20 %</td><td>2,4 → 2,9</td><td>108 → 84</td><td>окупаемость сохраняется</td></tr>
+              <tr><td>Стоимость персонала</td><td>−20 %</td><td>2,4 → 3,2</td><td>108 → 71</td><td>ключевой риск</td></tr>
+              <tr><td>Коэффициент загрузки</td><td>−20 %</td><td>2,4 → 3,0</td><td>108 → 79</td><td>окупаемость сохраняется</td></tr>
+            </tbody>
+          </table>
+
+          <div class="wf-assum">
+            <strong>ⓘ Допущения расчёта</strong> <span class="exp">Развернуть</span>
+            <div style="margin-top:4px">Горизонт 5 лет. Резерв в CAPEX 10 %. Тариф электроэнергии
+              7,2 ₽/кВт·ч. Стоимость персонала 95 000 ₽/мес. Коэффициент загрузки 0,75. Инфляция и
+              дисконтирование не учитываются. Расчёт на данных каталога от 12.09.2026.</div>
+          </div>
+
+          <div class="wf-bt">Состав оборудования, сценарий «Покупка»<span class="wf-btn">Изменить на шаге 4 →</span></div>
+          <div class="wf-note">12 × AMR X200 · 2 × станция зарядки · 1 × лицензия WMS-интеграции</div>
+        </div>
+      </div>
+    </div>
+    <ul>
+      <li><b>Базовый сценарий стоит первым и приглушён</b> — это точка отсчёта, а не конкурент.</li>
+      <li><b>Строки — показатели, колонки — сценарии</b>: взгляд идёт по строке и сравнивает одно и то
+        же. Разбивки CAPEX и OPEX свёрнуты, иначе 15 строк вместо 8.</li>
+      <li><code>payback_years = null</code> показывается как «не окупается» с пояснением «годовой
+        эффект ≤ 0», а не прочерком.</li>
+      <li>Пятый сценарий и дальше — горизонтальная прокрутка внутри таблицы с закреплённой первой
+        колонкой; страница вбок не едет никогда.</li>
+      <li>Пока идёт пересчёт, старые числа остаются на месте приглушёнными — экран не пустеет.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2 data-num="10">Открытые вопросы</h2>
+    <div class="scroller">
+      <table>
+        <thead><tr><th>#</th><th>Вопрос</th><th>К кому</th></tr></thead>
+        <tbody>
+          <tr><td class="num">1</td><td>В <span class="mono">EconomicsResult</span> нет денежного потока по годам — есть только <span class="mono">tco_total</span> и <span class="mono">annual_effect</span>. Предлагаю добавить <span class="mono">cashflow_by_year: list[float]</span>, иначе график строится линейной прикидкой</td><td>Стас, Александра</td></tr>
+          <tr><td class="num">2</td><td>Перенос гостевого черновика в аккаунт: нужна ручка «создать проект из клиентского черновика»</td><td>backend-glue</td></tr>
+          <tr><td class="num">3</td><td>Справочники для формы (режимы работы, типы хранения, зоны, ограничения планировки) — ручка каталога или временно зашиваем на фронте?</td><td>Артём</td></tr>
+          <tr><td class="num">4</td><td>Импорт Excel/CSV: разбираем на фронте или отправляем файл на бэкенд? Формат шаблона не описан</td><td>Стас</td></tr>
+          <tr><td class="num">5</td><td>Лучший сценарий — по окупаемости или по TCO? У RaaS окупаемость лучшая при худшем TCO. Возможно, нужны обе плитки</td><td>вся команда</td></tr>
+          <tr><td class="num">6</td><td>Показываем ли гостю цены в каталоге — от этого зависит ценность демо-расчёта</td><td>вся команда</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer>
+    Черновик 0.1. Поля сверены с <span class="mono">contracts/*.md</span> на 19.09.2026 — контракты ещё
+    переделываются, при их изменении правим таблицы «Данные» и типы во фронтенде.
+    Оба макета собраны в коде: <span class="mono">/wireframes/params</span> и
+    <span class="mono">/wireframes/dashboard</span>.
+  </footer>
+
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.9.1/mermaid.min.js"></script>
+<script>
+  // Граф переходов. Без интернета скрипт не загрузится — тогда в блоке
+  // останется исходный текст диаграммы, он тоже читается.
+  if (window.mermaid) {
+    var dark = window.matchMedia('(prefers-color-scheme: dark)').matches
+      && document.documentElement.dataset.theme !== 'light';
+    window.mermaid.initialize({ startOnLoad: true, theme: dark ? 'dark' : 'neutral' });
+  }
+</script>
+</body>
+</html>

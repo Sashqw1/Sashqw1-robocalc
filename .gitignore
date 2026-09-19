@@ -1,0 +1,15 @@
+node_modules/
+dist/
+*.log
+
+# Python
+__pycache__/
+*.pyc
+
+# ОС и редакторы
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/*
+!.vscode/extensions.json
+.idea/
