@@ -38,9 +38,8 @@ npm run dev
 Карта экранов публикуется из `site/` воркфлоу
 [.github/workflows/deploy.yml](.github/workflows/deploy.yml). Чтобы включить:
 
-Pages включается самим воркфлоу (`actions/configure-pages` с
-`enablement: true`), отдельно ничего настраивать не нужно: каждый push,
-меняющий `site/`, обновляет страницу.
+Один раз: Settings -> Pages -> Source: **GitHub Actions**. Дальше каждый push,
+меняющий `site/`, обновляет страницу сам.
 
 Адрес: **https://sashqw1.github.io/Sashqw1-robocalc/**
 
