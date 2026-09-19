@@ -1,5 +1,4 @@
 # Публикация карты экранов (site/) на GitHub Pages.
-# Включить один раз: Settings → Pages → Source: GitHub Actions.
 name: Deploy screen map
 
 on:
@@ -27,6 +26,11 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+      # enablement: true включает Pages в репозитории при первом запуске,
+      # чтобы не ходить руками в Settings → Pages
+      - uses: actions/configure-pages@v5
+        with:
+          enablement: true
       # Страница статическая и самодостаточная — сборка не нужна
       - uses: actions/upload-pages-artifact@v3
         with:
