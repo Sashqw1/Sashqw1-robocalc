@@ -135,3 +135,99 @@ export interface ProjectRecord {
   updated_at: string;
   current_version: number;
 }
+
+// ---------------------------------------------------------------------------
+// Каталог (contracts/catalog.md)
+// ---------------------------------------------------------------------------
+
+export type NavigationType = 'lidar_slam' | 'visual_slam' | 'magnetic_tape' | 'qr_markers' | 'wire_guided' | 'other';
+export type DataConfidence = 'verified' | 'partial' | 'unverified';
+
+export interface CatalogItem {
+  id: string;
+  identification: {
+    manufacturer: string;
+    product_name: string;
+    solution_type: string;
+    purpose: string;
+    country: string;
+    availability_status: AvailabilityStatus;
+  };
+  technical: {
+    payload_kg: number | null;
+    dimensions_mm: string | null;
+    speed_mps: number | null;
+    throughput_per_hour: number | null;
+    autonomy_hours: number | null;
+    positioning_accuracy_mm: number | null;
+    navigation_type: NavigationType | null;
+    operating_conditions: string | null;
+  };
+  infrastructure: {
+    aisle_width_mm: number | null;
+    charging_type: string | null;
+    connectivity: string | null;
+    integration_notes: string | null;
+    service_model: string | null;
+  };
+  economics: {
+    equipment_cost: number | null;
+    software_cost: number | null;
+    implementation_cost: number | null;
+    maintenance_cost_per_year: number | null;
+    acquisition_model: AcquisitionModel;
+    service_life_years: number | null;
+  };
+  applicability: {
+    supported_object_types: string[];
+    supported_processes: string[];
+    limitations: string[];
+    case_studies: string[];
+  };
+  data_quality: {
+    source: string;
+    source_url: string | null;
+    last_updated: string;
+    confidence: DataConfidence;
+  };
+  tags: string[];
+  attributes: Record<string, string | number | boolean>;
+}
+
+// ---------------------------------------------------------------------------
+// Совместимость (contracts/compatibility.md)
+// ---------------------------------------------------------------------------
+
+export type CompatibilityVerdict = 'allowed' | 'forbidden' | 'warning' | 'needs_review';
+export type RuleOperator = 'eq' | 'ne' | 'lt' | 'lte' | 'gt' | 'gte' | 'in' | 'has_tag';
+
+export interface RuleCondition {
+  key: string;
+  operator: RuleOperator;
+  value: string | number | boolean | string[];
+}
+
+export interface CompatibilityRule {
+  id: string;
+  equipment_condition: RuleCondition;
+  object_condition: RuleCondition;
+  verdict: CompatibilityVerdict;
+  reason: string;
+  source: string | null;
+}
+
+// ---------------------------------------------------------------------------
+// Сценарии (contracts/economics.md)
+// ---------------------------------------------------------------------------
+
+export interface ScenarioInput {
+  project_id: string;
+  match_result_id: string;
+  scenario_kind: ScenarioKind;
+  financing_type: FinancingType;
+  staff_cost_per_month: number;
+  operating_hours_per_year: number;
+  load_factor: number;
+  horizon_years: number;
+  assumptions_overrides: Record<string, number>;
+}
