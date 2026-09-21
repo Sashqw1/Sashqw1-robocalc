@@ -1,13 +1,14 @@
-# Публикация карты экранов (site/) на GitHub Pages.
-# Требуется один раз: Settings -> Pages -> Source: GitHub Actions.
-# Включить Pages из воркфлоу не вышло: GITHUB_TOKEN не имеет прав на это
-# в репозитории с настройками по умолчанию.
-name: Deploy screen map
+# Публикация на GitHub Pages: приложение (frontend/) + карта экранов (site/).
+#   https://<user>.github.io/<repo>/                 — приложение
+#   https://<user>.github.io/<repo>/screen-map.html  — карта экранов и макеты
+# Один раз в настройках репозитория: Settings -> Pages -> Source: GitHub Actions.
+name: Deploy to GitHub Pages
 
 on:
   push:
     branches: [main]
     paths:
+      - 'frontend/**'
       - 'site/**'
       - '.github/workflows/deploy.yml'
   workflow_dispatch:
@@ -29,10 +30,27 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
       - uses: actions/configure-pages@v5
-      # Страница статическая и самодостаточная — сборка не нужна
+
+      - name: Сборка приложения
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run build
+        env:
+          # Проектный сайт живёт в подпапке /<repo>/ — без этого не найдутся скрипты и стили
+          VITE_BASE: /${{ github.event.repository.name }}/
+
+      - name: Карта экранов рядом с приложением
+        run: cp site/index.html frontend/dist/screen-map.html
+
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: site
+          path: frontend/dist
       - id: deployment
         uses: actions/deploy-pages@v4

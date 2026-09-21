@@ -33,16 +33,13 @@ npm install
 npm run dev
 ```
 
-## Публикация
+## Посмотреть онлайн
 
-Карта экранов публикуется из `site/` воркфлоу
-[.github/workflows/deploy.yml](.github/workflows/deploy.yml). Чтобы включить:
+- **Приложение:** https://sashqw1.github.io/Sashqw1-robocalc/ — все экраны на демонстрационных данных.
+  Роль переключается селектом «Роль» в шапке (гость / пользователь / админ).
+- **Карта экранов и макеты:** https://sashqw1.github.io/Sashqw1-robocalc/screen-map.html
 
-Один раз: Settings -> Pages -> Source: **GitHub Actions**. Дальше каждый push,
-меняющий `site/`, обновляет страницу сам.
-
-Адрес: **https://sashqw1.github.io/Sashqw1-robocalc/**
-
-Приложение из `frontend/` пока не деплоится. Когда понадобится — сборка к этому
-готова: база путей берётся из `VITE_BASE`, а `npm run build` кладёт рядом
-`404.html`, чтобы прямые ссылки на внутренние маршруты открывались.
+Публикует воркфлоу [.github/workflows/deploy.yml](.github/workflows/deploy.yml):
+каждый push в `main`, меняющий `frontend/` или `site/`, пересобирает приложение
+и обновляет сайт (1–2 минуты). Папка `.github` должна лежать в корне репозитория —
+иначе GitHub её не видит.

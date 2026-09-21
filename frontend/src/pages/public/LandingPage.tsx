@@ -66,7 +66,7 @@ export function LandingPage() {
             </div>
             <div className="stat">
               <span className="label">Годовой эффект</span>
-              <span className="stat__value">18,4 млн ₽</span>
+              <span className="stat__value">17 млн ₽</span>
             </div>
           </div>
           <div style={{ padding: '0 18px 18px' }} className="stack stack--sm">
@@ -120,7 +120,10 @@ export function LandingPage() {
       </section>
 
       <footer className="row row--between faint" style={{ borderTop: '1px solid var(--line)', paddingTop: 18 }}>
-        <span>ROBOCALC · расчёт роботизации объектов</span>
+        <span>
+          ROBOCALC · расчёт роботизации объектов ·{' '}
+          <a href={`${import.meta.env.BASE_URL}screen-map.html`}>Карта экранов и макеты</a>
+        </span>
         <span>Цифры в расчёте ориентировочные; допущения показываются в каждом результате.</span>
       </footer>
     </div>
