@@ -10,6 +10,7 @@ import { ROUTES, WIZARD_STEPS } from '../../shared/config/routes';
 import { formatDate, formatDateTime, formatRubShort, formatYears } from '../../shared/lib/format';
 import { ButtonLink, Card, Chip, Progress, Stat } from '../../shared/ui';
 import { ProjectBar } from '../../widgets/ProjectBar';
+import { solutionTypeLabel } from '../../shared/dictionaries';
 
 /** Хаб проекта: где остановились, главные цифры, версии. */
 export function ProjectOverviewPage() {
@@ -89,7 +90,7 @@ export function ProjectOverviewPage() {
                       <span>
                         <strong className="num">{draft.quantities[id] ?? 1} ×</strong> {catalogById(id)?.identification.product_name}
                       </span>
-                      <span className="faint">{catalogById(id)?.identification.solution_type}</span>
+                      <span className="faint">{solutionTypeLabel(catalogById(id)?.identification.solution_type ?? '')}</span>
                     </div>
                   ))}
                 </div>

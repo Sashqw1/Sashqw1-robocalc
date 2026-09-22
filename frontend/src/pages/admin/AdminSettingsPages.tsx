@@ -16,17 +16,20 @@ import {
 import { formatDateTime } from '../../shared/lib/format';
 import { Alert, Button, Card, Chip, MockNote, NumberField, PageHeader } from '../../shared/ui';
 
+const asLabels = (xs: readonly (string | { label: string })[]) => xs.map((x) => (typeof x === 'string' ? x : x.label));
+
+/** Показываем подписи из единого справочника contracts/dictionaries/categories.json. */
 const DICT_VALUES: Record<string, readonly string[]> = {
-  solution_types: SOLUTION_TYPES,
-  processes: PROCESSES,
+  solution_types: asLabels(SOLUTION_TYPES),
+  processes: asLabels(PROCESSES),
   operating_modes: OPERATING_MODES,
-  storage_types: STORAGE_TYPES,
-  warehouse_zones: WAREHOUSE_ZONES,
-  layout_constraints: LAYOUT_CONSTRAINTS,
-  airport_zones: AIRPORT_ZONES,
-  safety: SAFETY_REQUIREMENTS,
-  facility_types: FACILITY_TYPES,
-  sanitary: SANITARY_REQUIREMENTS,
+  storage_types: asLabels(STORAGE_TYPES),
+  warehouse_zones: asLabels(WAREHOUSE_ZONES),
+  layout_constraints: asLabels(LAYOUT_CONSTRAINTS),
+  airport_zones: asLabels(AIRPORT_ZONES),
+  safety: asLabels(SAFETY_REQUIREMENTS),
+  facility_types: asLabels(FACILITY_TYPES),
+  sanitary: asLabels(SANITARY_REQUIREMENTS),
 };
 
 /** Справочники: список групп слева, значения выбранной группы справа. */

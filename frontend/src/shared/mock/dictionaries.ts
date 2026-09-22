@@ -3,6 +3,7 @@
  * (открытый вопрос 3 в docs/architecture/pages.md).
  */
 
+import { CATEGORIES, optionsOf } from '../dictionaries';
 import type { ObjectType, ScenarioKind, FinancingType, AvailabilityStatus, MatchStatus, ProjectStatus, NavigationType, CompatibilityVerdict, DataConfidence, AcquisitionModel } from '../types/contracts';
 
 export const OBJECT_TYPES: { value: ObjectType; label: string; short: string; description: string; needs: string[] }[] = [
@@ -31,67 +32,27 @@ export const OBJECT_TYPES: { value: ObjectType; label: string; short: string; de
 
 export const objectTypeLabel = (t: ObjectType) => OBJECT_TYPES.find((o) => o.value === t)?.label ?? t;
 
-export const OPERATING_MODES = ['24/7', '2 смены по 12 ч', '3 смены по 8 ч', '1 смена, 8 ч', '5/2, 2 смены'] as const;
+/*
+ * Списки для форм и фильтров — из единого справочника contracts/dictionaries/categories.json
+ * (его же читают редактор плана и бэкенд). Здесь только адаптеры под компоненты.
+ */
 
-export const STORAGE_TYPES = [
-  'Фронтальные стеллажи',
-  'Набивные стеллажи',
-  'Мезонин',
-  'Напольное хранение',
-  'Полочные стеллажи',
-  'Гравитационные стеллажи',
-] as const;
-
-export const WAREHOUSE_ZONES = ['Приёмка', 'Хранение', 'Комплектация', 'Упаковка', 'Отгрузка', 'Возвраты', 'Зарядка'] as const;
-
-export const LAYOUT_CONSTRAINTS = [
-  'Узкие проходы до 2,5 м',
-  'Колонны с шагом 6×6 м',
-  'Перепады уровня пола',
-  'Рампы и пандусы',
-  'Смешанное движение с погрузчиками',
-  'Низкие потолки до 6 м',
-] as const;
-
-export const AIRPORT_ZONES = ['Перрон', 'Терминал, чистая зона', 'Терминал, общая зона', 'Багажное отделение', 'Грузовой терминал'] as const;
-
-export const SAFETY_REQUIREMENTS = [
-  'Досмотр оборудования СБ',
-  'Ограничение скорости 6 км/ч',
-  'Проблесковый маячок',
-  'Работа при −30 °C',
-  'Взаимодействие с наземной техникой',
-] as const;
-
-export const FACILITY_TYPES = ['Многопрофильная больница', 'Специализированный центр', 'Поликлиника', 'Лаборатория', 'Реабилитационный центр'] as const;
-
-export const MEDICAL_CARGO_CATEGORIES = [
-  { key: 'cargo', label: 'Грузы' },
-  { key: 'linen', label: 'Бельё' },
-  { key: 'food', label: 'Питание' },
-  { key: 'drugs', label: 'Медикаменты' },
-  { key: 'waste', label: 'Отходы' },
-] as const;
-
-export const SANITARY_REQUIREMENTS = [
-  'Раздельные потоки чистого и грязного',
-  'Обработка дезсредствами',
-  'Закрытые контейнеры',
-  'Класс чистоты помещений',
-] as const;
-
-export const SOLUTION_TYPES = [
-  'AMR',
-  'Робот-штабелёр',
-  'Робот-тягач',
-  'Беспилотный погрузчик',
-  'Робот-уборщик',
-  'Автоматическое хранилище',
-  'Сортировочный робот',
-  'Робот доставки',
-] as const;
-
-export const PROCESSES = ['Приёмка', 'Перемещение', 'Комплектация', 'Отгрузка', 'Инвентаризация', 'Уборка', 'Буксировка', 'Доставка'] as const;
+/** Режим работы по списку ТЗ — свободный текст; справочник даёт только подсказки. */
+export const OPERATING_MODES = CATEGORIES.operating_modes.map((m) => m.label);
+export const STORAGE_TYPES = optionsOf('storage_types');
+export const WAREHOUSE_ZONES = CATEGORIES.working_zones
+  .filter((z) => z.object_types.includes('warehouse'))
+  .map((z) => ({ value: z.id, label: z.label }));
+export const LAYOUT_CONSTRAINTS = optionsOf('layout_constraints');
+export const AIRPORT_ZONES = optionsOf('airport_zones');
+export const SAFETY_REQUIREMENTS = optionsOf('safety_requirements');
+export const FACILITY_TYPES = optionsOf('facility_types');
+export const MEDICAL_CARGO_CATEGORIES = CATEGORIES.medical_cargo_categories.map((c) => ({ key: c.id, label: c.label }));
+export const ROUTES_AND_ELEVATORS = optionsOf('routes_and_elevators');
+export const SANITARY_REQUIREMENTS = optionsOf('sanitary_requirements');
+export const ACCESS_RESTRICTIONS = optionsOf('access_restrictions');
+export const SOLUTION_TYPES = optionsOf('equipment_categories');
+export const PROCESSES = optionsOf('processes');
 
 export const AVAILABILITY_LABEL: Record<AvailabilityStatus, string> = {
   available: 'Доступно',

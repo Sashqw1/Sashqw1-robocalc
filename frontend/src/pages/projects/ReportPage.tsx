@@ -2,12 +2,13 @@ import { useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { bestScenario, computeScenario } from '../../features/wizard/mockEconomics';
 import { useDraft, useProject } from '../../features/wizard/store';
-import { PARAMS_SCHEMA } from '../../features/wizard/paramsSchema';
+import { PARAMS_SCHEMA, displayParamValue } from '../../features/wizard/paramsSchema';
 import { catalogById } from '../../shared/mock/catalog';
 import { FINANCING_LABEL, objectTypeLabel } from '../../shared/mock/dictionaries';
 import { ROUTES } from '../../shared/config/routes';
 import { formatDate, formatNumber, formatPct, formatRub, formatYears } from '../../shared/lib/format';
 import { Button, ButtonLink } from '../../shared/ui';
+import { solutionTypeLabel } from '../../shared/dictionaries';
 
 /** Предпросмотр отчёта: печатная вёрстка того, что уйдёт в PDF. */
 export function ReportPage() {
@@ -21,8 +22,8 @@ export function ReportPage() {
 
   const shownFields = PARAMS_SCHEMA[type]
     .flatMap((s) => s.fields)
-    .filter((f) => f.kind === 'number' || f.kind === 'select' || f.kind === 'dims')
-    .filter((f) => values[f.key] !== undefined && values[f.key] !== null && values[f.key] !== '');
+    .filter((f) => f.kind !== 'radio' || values[f.key])
+    .filter((f) => values[f.key] !== undefined && values[f.key] !== null && values[f.key] !== '' && !(Array.isArray(values[f.key]) && (values[f.key] as unknown[]).length === 0));
 
   return (
     <div className="page" style={{ maxWidth: 1000 }}>
@@ -67,7 +68,7 @@ export function ReportPage() {
                 <tr key={f.key}>
                   <td style={{ width: '50%', color: '#5c6673' }}>{f.label}</td>
                   <td>
-                    {typeof values[f.key] === 'number' ? formatNumber(values[f.key] as number, 1) : String(values[f.key])} {f.unit && f.kind === 'number' ? f.unit : ''}
+                    {displayParamValue(f, values[f.key])}
                   </td>
                 </tr>
               ))}
@@ -93,7 +94,7 @@ export function ReportPage() {
                 return (
                   <tr key={id}>
                     <td>{c?.identification.product_name}</td>
-                    <td>{c?.identification.solution_type}</td>
+                    <td>{solutionTypeLabel(c?.identification.solution_type ?? '')}</td>
                     <td className="r">{q}</td>
                     <td className="r">{formatRub((c?.economics.equipment_cost ?? 0) * q)}</td>
                   </tr>

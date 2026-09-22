@@ -17,7 +17,7 @@ import { Alert, Button, ButtonLink, Card, MockNote, NumberField, SelectField, Ta
 function blank(): CatalogItem {
   return {
     id: '',
-    identification: { manufacturer: '', product_name: '', solution_type: 'AMR', purpose: '', country: 'Россия', availability_status: 'available' },
+    identification: { manufacturer: '', product_name: '', solution_type: 'amr', purpose: '', country: 'Россия', availability_status: 'available' },
     technical: { payload_kg: null, dimensions_mm: null, speed_mps: null, throughput_per_hour: null, autonomy_hours: null, positioning_accuracy_mm: null, navigation_type: null, operating_conditions: null },
     infrastructure: { aisle_width_mm: null, charging_type: null, connectivity: null, integration_notes: null, service_model: null },
     economics: { equipment_cost: null, software_cost: null, implementation_cost: null, maintenance_cost_per_year: null, acquisition_model: 'purchase', service_life_years: null },
@@ -106,7 +106,7 @@ export function AdminCatalogItemPage() {
             <div className="form-grid">
               <TextField label="Производитель" required value={item.identification.manufacturer} onChange={(v) => set('identification', { manufacturer: v })} error={e('manufacturer')} />
               <TextField label="Наименование" required value={item.identification.product_name} onChange={(v) => set('identification', { product_name: v })} error={e('product_name')} />
-              <SelectField label="Тип решения" required value={item.identification.solution_type} options={SOLUTION_TYPES} onChange={(v) => set('identification', { solution_type: v })} hint="из справочника «Типы решений»" />
+              <SelectField label="Тип решения" required value={item.identification.solution_type} options={SOLUTION_TYPES} onChange={(v) => set('identification', { solution_type: v })} hint="из единого справочника categories.json" />
               <TextField label="Страна" required value={item.identification.country} onChange={(v) => set('identification', { country: v })} />
               <TextField label="Назначение" required wide value={item.identification.purpose} onChange={(v) => set('identification', { purpose: v })} error={e('purpose')} hint="процесс, под который решение подходит" />
               <SelectField

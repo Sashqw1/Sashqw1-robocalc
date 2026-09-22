@@ -6,6 +6,7 @@ import { ROUTES } from '../../shared/config/routes';
 import type { DataConfidence } from '../../shared/types/contracts';
 import { formatDate, formatNumber, formatRubShort } from '../../shared/lib/format';
 import { Alert, Button, ButtonLink, Card, Chip, MockNote, PageHeader } from '../../shared/ui';
+import { solutionTypeLabel } from '../../shared/dictionaries';
 
 /** Каталог для администратора: таблица, фильтры, массовые действия, импорт. */
 export function AdminCatalogPage() {
@@ -61,7 +62,9 @@ export function AdminCatalogPage() {
             <select value={type} onChange={(e) => setType(e.target.value)} aria-label="Тип решения">
               <option value="">Все типы решений</option>
               {SOLUTION_TYPES.map((t) => (
-                <option key={t}>{t}</option>
+                <option key={t.value} value={t.value}>
+                  {t.label}
+                </option>
               ))}
             </select>
           </div>
@@ -123,7 +126,7 @@ export function AdminCatalogPage() {
                     <strong>{c.identification.product_name}</strong>
                     <div className="faint mono">{c.id}</div>
                   </td>
-                  <td>{c.identification.solution_type}</td>
+                  <td>{solutionTypeLabel(c.identification.solution_type)}</td>
                   <td className="r">{formatNumber(c.technical.payload_kg)}</td>
                   <td className="r nowrap">{formatRubShort(c.economics.equipment_cost)}</td>
                   <td>{AVAILABILITY_LABEL[c.identification.availability_status]}</td>

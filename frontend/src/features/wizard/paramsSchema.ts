@@ -6,18 +6,20 @@
 
 import type { ObjectType } from '../../shared/types/contracts';
 import {
+  ACCESS_RESTRICTIONS,
   AIRPORT_ZONES,
   FACILITY_TYPES,
   LAYOUT_CONSTRAINTS,
   MEDICAL_CARGO_CATEGORIES,
   OPERATING_MODES,
+  ROUTES_AND_ELEVATORS,
   SAFETY_REQUIREMENTS,
   SANITARY_REQUIREMENTS,
   STORAGE_TYPES,
   WAREHOUSE_ZONES,
 } from '../../shared/mock/dictionaries';
 
-export type FieldKind = 'number' | 'select' | 'tags' | 'dims' | 'cargo' | 'radio';
+export type FieldKind = 'number' | 'select' | 'combo' | 'tags' | 'dims' | 'cargo' | 'radio';
 
 export interface ParamField {
   key: string;
@@ -60,7 +62,7 @@ export const PARAMS_SCHEMA: Record<ObjectType, ParamSection[]> = {
       title: 'Режим и объём операций',
       help: 'Приёмку, внутренние перемещения и отгрузку считаем отдельно: у них разная нагрузка на технику и разные маршруты.',
       fields: [
-        { key: 'operating_mode', label: 'Режим работы', kind: 'select', options: OPERATING_MODES, required: true, hint: 'из справочника', help: 'От режима зависит, сколько часов в год работает техника, и сколько смен персонала она заменяет.' },
+        { key: 'operating_mode', label: 'Режим работы', kind: 'combo', options: OPERATING_MODES, required: true, hint: 'выберите или впишите своё', help: 'От режима зависит, сколько часов в год работает техника, и сколько смен персонала она заменяет.' },
         { key: 'current_throughput_per_hour', label: 'Текущая производительность', kind: 'number', unit: 'операций/ч', required: true, min: 1, typicalMax: 5000, hint: 'сколько объект делает сейчас', help: 'Средняя производительность до роботизации. С ней сравнивается результат симуляции.' },
         { key: 'inbound_ops_per_day', label: 'Приёмка, входящие операции', kind: 'number', unit: 'операций/сутки', required: true, min: 0, typicalMax: 50_000, help: 'Сколько грузовых единиц принимается за сутки.' },
         { key: 'internal_ops_per_day', label: 'Внутрискладские операции', kind: 'number', unit: 'операций/сутки', required: true, min: 0, typicalMax: 100_000, help: 'Перемещения между зонами. Если учёт ведётся только суммарно — впишите всё сюда, подбор это допускает.' },
@@ -86,8 +88,8 @@ export const PARAMS_SCHEMA: Record<ObjectType, ParamSection[]> = {
         { key: 'available_area_sqm', label: 'Доступная площадь под роботизацию', kind: 'number', unit: 'м²', min: 0, hint: 'необязательно; не больше площади склада', help: 'Если роботизируется только часть склада — укажите её площадь. Пустое поле = весь склад.' },
         { key: 'storage_type', label: 'Тип хранения', kind: 'select', options: STORAGE_TYPES, required: true, help: 'Тип стеллажей определяет, нужен ли подъём груза на высоту.' },
         { key: 'route_length_m', label: 'Протяжённость маршрутов', kind: 'number', unit: 'м', required: true, min: 1, typicalMax: 20_000, help: 'Суммарная длина основных маршрутов перемещения грузов.' },
-        { key: 'working_zones', label: 'Рабочие зоны', kind: 'tags', options: WAREHOUSE_ZONES, wide: true, help: 'Зоны потом появятся на 2D-плане на шаге «Визуализация».' },
-        { key: 'layout_constraints', label: 'Ограничения планировки', kind: 'tags', options: LAYOUT_CONSTRAINTS, wide: true, hint: 'влияет на подбор: техника, которой нужен проход шире, будет исключена', help: 'Каждое ограничение проверяется правилами совместимости — несовместимая техника уйдёт в «Исключено» с объяснением.' },
+        { key: 'working_zones', label: 'Рабочие зоны', kind: 'tags', options: WAREHOUSE_ZONES, required: true, wide: true, help: 'Зоны потом появятся на 2D-плане на шаге «Визуализация».' },
+        { key: 'layout_constraints', label: 'Ограничения планировки', kind: 'tags', options: LAYOUT_CONSTRAINTS, wide: true, hint: 'необязательно; влияет на подбор: техника, которой нужен проход шире, будет исключена', help: 'Каждое ограничение проверяется правилами совместимости — несовместимая техника уйдёт в «Исключено» с объяснением.' },
       ],
     },
     STAFF_SECTION,
@@ -99,11 +101,11 @@ export const PARAMS_SCHEMA: Record<ObjectType, ParamSection[]> = {
       title: 'Зона и режим',
       help: 'В закрытой зоне допуск техники согласуется со службой безопасности — это отражается в подборе как «требует проверки».',
       fields: [
-        { key: 'operation_zone', label: 'Зона работ', kind: 'select', options: AIRPORT_ZONES, required: true, help: 'Где будет работать техника.' },
-        { key: 'operating_mode', label: 'Режим работы', kind: 'select', options: OPERATING_MODES, required: true, help: 'От режима зависит годовая наработка техники.' },
+        { key: 'operation_zone', label: 'Зона операции', kind: 'select', options: AIRPORT_ZONES, required: true, help: 'Где будет работать техника.' },
+        { key: 'operating_mode', label: 'Режим работы', kind: 'combo', options: OPERATING_MODES, required: true, help: 'От режима зависит годовая наработка техники.' },
         {
           key: 'zone_access',
-          label: 'Доступ в зону',
+          label: 'Доступность зоны',
           kind: 'radio',
           required: true,
           options: [
@@ -119,9 +121,9 @@ export const PARAMS_SCHEMA: Record<ObjectType, ParamSection[]> = {
       title: 'Потоки',
       help: 'Пассажиро- и грузопоток необязательны по отдельности, но хотя бы один из них нужен — иначе подбор не на чем строить.',
       fields: [
-        { key: 'passenger_flow_per_day', label: 'Пассажиропоток', kind: 'number', unit: 'пасс./сутки', min: 0, typicalMax: 300_000, help: 'Среднесуточный пассажиропоток в зоне работ.' },
-        { key: 'cargo_flow_tons_per_day', label: 'Грузопоток', kind: 'number', unit: 'т/сутки', min: 0, typicalMax: 5000, help: 'Масса багажа или грузов в сутки.' },
-        { key: 'ops_count_per_day', label: 'Операций в сутки', kind: 'number', unit: 'операций/сутки', required: true, min: 1, typicalMax: 100_000, help: 'Рейсы тележек, перевозки, циклы уборки — то, что будет делать техника.' },
+        { key: 'passenger_flow_per_day', label: 'Пассажиропоток', kind: 'number', unit: 'пасс./сутки', hint: 'необязательно, если указан грузопоток', min: 0, typicalMax: 300_000, help: 'Среднесуточный пассажиропоток в зоне работ.' },
+        { key: 'cargo_flow_tons_per_day', label: 'Грузопоток', kind: 'number', unit: 'т/сутки', hint: 'необязательно, если указан пассажиропоток', min: 0, typicalMax: 5000, help: 'Масса багажа или грузов в сутки.' },
+        { key: 'ops_count_per_day', label: 'Количество операций в сутки', kind: 'number', unit: 'операций/сутки', required: true, min: 1, typicalMax: 100_000, help: 'Рейсы тележек, перевозки, циклы уборки — то, что будет делать техника.' },
         { key: 'peak_load_per_hour', label: 'Пиковая нагрузка', kind: 'number', unit: 'операций/ч', required: true, min: 1, typicalMax: 10_000, help: 'Техника подбирается под пик, а не под среднее.' },
       ],
     },
@@ -140,7 +142,7 @@ export const PARAMS_SCHEMA: Record<ObjectType, ParamSection[]> = {
       id: 'safety',
       title: 'Безопасность',
       help: 'Требования безопасности проверяются правилами совместимости.',
-      fields: [{ key: 'safety_requirements', label: 'Требования безопасности', kind: 'tags', options: SAFETY_REQUIREMENTS, wide: true, help: 'Например, работа при низких температурах или ограничение скорости.' }],
+      fields: [{ key: 'safety_requirements', label: 'Требования безопасности', kind: 'tags', options: SAFETY_REQUIREMENTS, required: true, wide: true, hint: 'если особых требований нет — выберите «Особых требований нет»', help: 'Например, работа при низких температурах или ограничение скорости.' }],
     },
   ],
 
@@ -151,9 +153,9 @@ export const PARAMS_SCHEMA: Record<ObjectType, ParamSection[]> = {
       help: 'Этажность важна: техника без работы с лифтами на многоэтажном объекте будет исключена.',
       fields: [
         { key: 'facility_type', label: 'Тип учреждения', kind: 'select', options: FACILITY_TYPES, required: true, help: 'Тип учреждения влияет на санитарные требования по умолчанию.' },
-        { key: 'operating_mode', label: 'Режим работы', kind: 'select', options: OPERATING_MODES, required: true, help: 'Стационар обычно работает 24/7.' },
+        { key: 'operating_mode', label: 'Режим работы', kind: 'combo', options: OPERATING_MODES, required: true, help: 'Стационар обычно работает 24/7.' },
         { key: 'area_sqm', label: 'Площадь', kind: 'number', unit: 'м²', required: true, min: 1, typicalMax: 500_000, help: 'Площадь корпусов, где будет работать техника.' },
-        { key: 'floors_count', label: 'Этажность', kind: 'number', unit: 'этажей', required: true, min: 1, integer: true, typicalMax: 40, help: 'Максимальная этажность корпусов на маршрутах.' },
+        { key: 'floors_count', label: 'Количество этажей', kind: 'number', unit: 'этажей', required: true, min: 1, integer: true, typicalMax: 40, help: 'Максимальная этажность корпусов на маршрутах.' },
       ],
     },
     {
@@ -166,7 +168,7 @@ export const PARAMS_SCHEMA: Record<ObjectType, ParamSection[]> = {
       id: 'routes',
       title: 'Маршруты и лифты',
       help: 'Лифты — главное узкое место внутренней логистики больницы.',
-      fields: [{ key: 'routes_and_elevators', label: 'Маршруты и лифты', kind: 'tags', options: ['Грузовой лифт в каждом корпусе', 'Переходы между корпусами', 'Подземный тоннель', 'Общие лифты с пациентами'], wide: true, help: 'Перечислите лифты и переходы, которыми может пользоваться техника.' }],
+      fields: [{ key: 'routes_and_elevators', label: 'Маршруты и лифты', kind: 'tags', options: ROUTES_AND_ELEVATORS, required: true, wide: true, help: 'Перечислите лифты и переходы, которыми может пользоваться техника.' }],
     },
     STAFF_SECTION,
     {
@@ -174,14 +176,31 @@ export const PARAMS_SCHEMA: Record<ObjectType, ParamSection[]> = {
       title: 'Санитария и доступ',
       help: 'Санитарные требования и ограничения доступа проверяются правилами совместимости.',
       fields: [
-        { key: 'sanitary_requirements', label: 'Санитарные требования', kind: 'tags', options: SANITARY_REQUIREMENTS, wide: true, help: 'Например, раздельные потоки чистого и грязного.' },
-        { key: 'access_restrictions', label: 'Ограничения доступа', kind: 'tags', options: ['Операционный блок', 'Реанимация', 'Инфекционное отделение'], wide: true, help: 'Зоны, куда технике нельзя.' },
+        { key: 'sanitary_requirements', label: 'Санитарные требования', kind: 'tags', options: SANITARY_REQUIREMENTS, required: true, wide: true, help: 'Например, раздельные потоки чистого и грязного.' },
+        { key: 'access_restrictions', label: 'Ограничения доступа', kind: 'tags', options: ACCESS_RESTRICTIONS, required: true, wide: true, hint: 'если ограничений нет — выберите «Ограничений нет»', help: 'Зоны, куда технике нельзя.' },
       ],
     },
   ],
 };
 
 export { MEDICAL_CARGO_CATEGORIES };
+
+/** Значение поля для показа (отчёт, сводка): id справочника → подпись. */
+export function displayParamValue(f: ParamField, v: unknown): string {
+  const opts = (f.options ?? []).map((o) => (typeof o === 'string' ? { value: o, label: o } : o));
+  const one = (x: unknown) => {
+    const str = String(x);
+    return opts.find((o) => o.value === str)?.label ?? (str.startsWith('custom:') ? str.slice(7) : str);
+  };
+  if (Array.isArray(v)) return v.map(one).join(', ');
+  if (typeof v === 'number') return new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 1 }).format(v) + (f.unit ? ` ${f.unit}` : '');
+  if (v && typeof v === 'object') {
+    return Object.entries(v as Record<string, number>)
+      .map(([k, n]) => `${MEDICAL_CARGO_CATEGORIES.find((c) => c.key === k)?.label ?? k}: ${n}`)
+      .join(', ');
+  }
+  return one(v);
+}
 
 export type ParamValues = Record<string, unknown>;
 

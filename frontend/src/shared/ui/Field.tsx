@@ -169,13 +169,21 @@ export function SelectField({ value, onChange, options, placeholder, id, selectP
   );
 }
 
+type TagOption = string | { value: string; label: string };
+
 interface TagsFieldProps extends FieldCommon {
   value: string[];
   onChange: (value: string[]) => void;
-  suggestions?: readonly string[];
+  /**
+   * Варианты. Строки — значение совпадает с подписью. Объекты {value, label} —
+   * режим справочника: храним id, а вписанное вручную — как «custom:текст».
+   */
+  suggestions?: readonly TagOption[];
   placeholder?: string;
   id?: string;
 }
+
+const CUSTOM = 'custom:';
 
 /** Список значений: выбор из справочника плюс «своё» по Enter. */
 export function TagsField({ value, onChange, suggestions = [], placeholder = 'Добавить…', id, ...shell }: TagsFieldProps) {
@@ -183,20 +191,33 @@ export function TagsField({ value, onChange, suggestions = [], placeholder = 'Д
   const inputId = id ?? autoId;
   const listId = `${inputId}-list`;
   const [draft, setDraft] = useState('');
+  const options = suggestions.map((o) => (typeof o === 'string' ? { value: o, label: o } : o));
+  const dictMode = suggestions.some((o) => typeof o !== 'string');
+
+  const labelOf = (v: string) => options.find((o) => o.value === v)?.label ?? (v.startsWith(CUSTOM) ? v.slice(CUSTOM.length) : v);
+  const toValue = (text: string) => {
+    const found = options.find((o) => o.label.toLowerCase() === text.toLowerCase());
+    if (found) return found.value;
+    return dictMode ? `${CUSTOM}${text}` : text;
+  };
 
   const add = (raw: string) => {
-    const item = raw.trim();
-    if (item && !value.includes(item)) onChange([...value, item]);
+    const text = raw.trim();
+    if (text) {
+      const v = toValue(text);
+      if (!value.includes(v)) onChange([...value, v]);
+    }
     setDraft('');
   };
 
   return (
     <Field {...shell} htmlFor={inputId}>
-      <div className="tags">
-        {value.map((tag) => (
-          <span className="tag" key={tag}>
-            {tag}
-            <button type="button" aria-label={`Убрать «${tag}»`} onClick={() => onChange(value.filter((t) => t !== tag))}>
+      <div className={`tags${shell.error ? ' control--error' : ''}`}>
+        {value.map((v) => (
+          <span className="tag" key={v} title={v.startsWith(CUSTOM) ? 'Своё значение, не из справочника' : undefined}>
+            {labelOf(v)}
+            {v.startsWith(CUSTOM) && <span className="faint"> · своё</span>}
+            <button type="button" aria-label={`Убрать «${labelOf(v)}»`} onClick={() => onChange(value.filter((t) => t !== v))}>
               ×
             </button>
           </span>
@@ -209,7 +230,7 @@ export function TagsField({ value, onChange, suggestions = [], placeholder = 'Д
           placeholder={placeholder}
           onChange={(e) => {
             const next = e.target.value;
-            if (suggestions.includes(next)) add(next);
+            if (options.some((o) => o.label === next)) add(next);
             else setDraft(next);
           }}
           onKeyDown={(e) => {
@@ -221,11 +242,37 @@ export function TagsField({ value, onChange, suggestions = [], placeholder = 'Д
           }}
         />
         <datalist id={listId}>
-          {suggestions
-            .filter((s) => !value.includes(s))
-            .map((s) => (
-              <option key={s} value={s} />
+          {options
+            .filter((o) => !value.includes(o.value))
+            .map((o) => (
+              <option key={o.value} value={o.label} />
             ))}
+        </datalist>
+      </div>
+    </Field>
+  );
+}
+
+interface ComboFieldProps extends FieldCommon {
+  value: string;
+  onChange: (value: string) => void;
+  suggestions: readonly string[];
+  placeholder?: string;
+  id?: string;
+}
+
+/** Текстовое поле с подсказками: можно выбрать из списка или вписать своё. */
+export function ComboField({ value, onChange, suggestions, placeholder, id, ...shell }: ComboFieldProps) {
+  const autoId = useId();
+  const inputId = id ?? autoId;
+  return (
+    <Field {...shell} htmlFor={inputId}>
+      <div className={`control${shell.error ? ' control--error' : ''}`}>
+        <input id={inputId} list={`${inputId}-list`} value={value} placeholder={placeholder} onChange={(e) => onChange(e.target.value)} aria-invalid={shell.error ? true : undefined} />
+        <datalist id={`${inputId}-list`}>
+          {suggestions.map((s) => (
+            <option key={s} value={s} />
+          ))}
         </datalist>
       </div>
     </Field>

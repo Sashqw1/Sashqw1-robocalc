@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useSession } from '../../features/auth/session';
+import { labelOf, solutionTypeLabel } from '../../shared/dictionaries';
 import { catalogById } from '../../shared/mock/catalog';
 import { ACQUISITION_LABEL, AVAILABILITY_LABEL, CONFIDENCE_LABEL, NAVIGATION_LABEL, objectTypeLabel } from '../../shared/mock/dictionaries';
 import { ROUTES } from '../../shared/config/routes';
@@ -40,7 +41,7 @@ export function CatalogItemPage() {
   return (
     <div className="page">
       <nav className="faint" aria-label="Навигация">
-        <Link to={ROUTES.catalog}>Каталог</Link> / {id.solution_type}
+        <Link to={ROUTES.catalog}>Каталог</Link> / {solutionTypeLabel(id.solution_type)}
       </nav>
 
       <div className="grid" style={{ gridTemplateColumns: 'minmax(0, 1fr) 360px', alignItems: 'start' }}>
@@ -53,7 +54,7 @@ export function CatalogItemPage() {
             <p className="muted">{id.purpose}</p>
             <div className="row" style={{ marginTop: 6 }}>
               <Chip tone={id.availability_status === 'available' ? 'ok' : 'warn'}>{AVAILABILITY_LABEL[id.availability_status]}</Chip>
-              <Chip plain>{id.solution_type}</Chip>
+              <Chip plain>{solutionTypeLabel(id.solution_type)}</Chip>
               {c.applicability.supported_object_types.map((o) => (
                 <Chip key={o} plain>
                   {objectTypeLabel(o as ObjectType)}
@@ -110,7 +111,7 @@ export function CatalogItemPage() {
                 <div className="row">
                   {c.applicability.supported_processes.map((p) => (
                     <Chip key={p} plain>
-                      {p}
+                      {labelOf('processes', p)}
                     </Chip>
                   ))}
                 </div>

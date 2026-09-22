@@ -231,3 +231,60 @@ export interface ScenarioInput {
   horizon_years: number;
   assumptions_overrides: Record<string, number>;
 }
+
+// ---------------------------------------------------------------------------
+// План объекта (contracts/topology.md) — рисуется в редакторе на шаге 7
+// ---------------------------------------------------------------------------
+
+export interface Point2D {
+  x: number;
+  y: number;
+}
+
+export interface Wall {
+  id: string;
+  points: Point2D[];
+  thickness_m: number;
+  tags: string[];
+}
+
+export interface Zone {
+  id: string;
+  name: string;
+  zone_type: ZoneType;
+  /** id из categories.json → working_zones: связь с рабочими зонами формы */
+  category_id: string | null;
+  polygon: Point2D[];
+  tags: string[];
+}
+
+export interface Route {
+  id: string;
+  points: Point2D[];
+  tags: string[];
+}
+
+export interface OperationPoint {
+  id: string;
+  /** id из categories.json → point_kinds */
+  kind: string;
+  position: Point2D;
+  tags: string[];
+}
+
+export interface RobotPlacement {
+  id: string;
+  catalog_item_id: string;
+  start_position: Point2D;
+}
+
+export interface TopologyConfig {
+  id: string;
+  project_id: string;
+  scale_m_per_unit: number;
+  walls: Wall[];
+  zones: Zone[];
+  routes: Route[];
+  operation_points: OperationPoint[];
+  robots: RobotPlacement[];
+}

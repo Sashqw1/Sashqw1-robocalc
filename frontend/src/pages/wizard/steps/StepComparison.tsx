@@ -7,6 +7,7 @@ import { formatNumber, formatRub, formatRubShort } from '../../../shared/lib/for
 import { Button, Card, Chip, EmptyState } from '../../../shared/ui';
 import { useWizard } from '../context';
 import { WizardFooter } from '../WizardFooter';
+import { solutionTypeLabel } from '../../../shared/dictionaries';
 
 interface Row {
   label: string;
@@ -110,7 +111,7 @@ export function StepComparison() {
                     {items.map((c) => (
                       <td key={c.id} className="r">
                         {c.identification.manufacturer}
-                        <div className="faint">{c.identification.solution_type}</div>
+                        <div className="faint">{solutionTypeLabel(c.identification.solution_type)}</div>
                       </td>
                     ))}
                   </tr>

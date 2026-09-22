@@ -7,6 +7,7 @@ import type { AvailabilityStatus, CatalogItem, ObjectType } from '../../shared/t
 import { formatNumber, formatRubShort, pluralize } from '../../shared/lib/format';
 import { Button, Checkbox, Chip, EmptyState, MockNote, PageHeader, Segmented } from '../../shared/ui';
 import type { Tone } from '../../shared/ui';
+import { solutionTypeLabel } from '../../shared/dictionaries';
 
 type View = 'cards' | 'table';
 
@@ -63,8 +64,8 @@ export function CatalogPage() {
           <div className="filters__group">
             <span className="label">Тип решения</span>
             {SOLUTION_TYPES.map((t) => (
-              <Checkbox key={t} checked={types.includes(t)} onChange={(on) => setTypes((xs) => (on ? [...xs, t] : xs.filter((x) => x !== t)))}>
-                {t} <span className="faint num">{CATALOG.filter((c) => c.identification.solution_type === t).length}</span>
+              <Checkbox key={t.value} checked={types.includes(t.value)} onChange={(on) => setTypes((xs) => (on ? [...xs, t.value] : xs.filter((x) => x !== t.value)))}>
+                {t.label} <span className="faint num">{CATALOG.filter((c) => c.identification.solution_type === t.value).length}</span>
               </Checkbox>
             ))}
           </div>
@@ -149,7 +150,7 @@ export function CatalogPage() {
                         </Link>
                         <div className="faint">{c.identification.manufacturer}</div>
                       </td>
-                      <td>{c.identification.solution_type}</td>
+                      <td>{solutionTypeLabel(c.identification.solution_type)}</td>
                       <td className="r">{formatNumber(c.technical.payload_kg)}</td>
                       <td className="r">{formatNumber(c.technical.throughput_per_hour)}</td>
                       <td className="r">{formatNumber(c.infrastructure.aisle_width_mm)}</td>
@@ -173,7 +174,7 @@ export function CatalogPage() {
 function ItemCard({ item: c }: { item: CatalogItem }) {
   return (
     <Link to={ROUTES.catalogItem(c.id)} className="item-card">
-      <div className="item-card__img">{c.identification.solution_type.toUpperCase()}</div>
+      <div className="item-card__img">{solutionTypeLabel(c.identification.solution_type).toUpperCase()}</div>
       <div className="stack" style={{ gap: 4 }}>
         <div className="row row--between">
           <span className="faint">{c.identification.manufacturer}</span>

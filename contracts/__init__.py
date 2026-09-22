@@ -11,6 +11,8 @@
 7. SimulationTimeline       Стас -> Алексей
 8. ScenarioInput/EconomicsResult   Стас (econWrapper) -> Владимиров
 9. ProjectRecord            Владимиров (backend-glue) <-> БД, -> фронт
+10. ProjectState / ProjectSaveRequest   фронт (визард + редактор) <-> backend-glue:
+    одна запись проекта, параметры и план — две части одного запроса
 """
 
 from .catalog import (
