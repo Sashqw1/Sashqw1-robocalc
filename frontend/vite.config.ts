@@ -7,4 +7,8 @@ import { defineConfig } from 'vite'
 export default defineConfig({
   plugins: [react()],
   base: process.env.VITE_BASE || '/',
+  server: {
+    // Единый справочник лежит в contracts/ — вне папки фронтенда
+    fs: { allow: ['..'] },
+  },
 })
