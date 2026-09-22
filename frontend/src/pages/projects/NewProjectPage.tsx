@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useWizardStore } from '../../features/wizard/store';
+import { createProject } from '../../features/projectApi';
 import { OBJECT_TYPES } from '../../shared/mock/dictionaries';
 import { OBJECT_ICON } from '../../shared/mock/projects';
 import { ROUTES } from '../../shared/config/routes';
@@ -20,10 +21,15 @@ export function NewProjectPage() {
   const nameError = tried && !name.trim() ? 'Назовите проект — так его будет проще найти в списке' : null;
   const typeError = tried && !type ? 'Выберите тип объекта' : null;
 
-  const submit = () => {
+  const [creating, setCreating] = useState(false);
+
+  const submit = async () => {
     setTried(true);
     if (!name.trim() || !type) return;
-    const id = `p-${Date.now().toString(36)}`;
+    setCreating(true);
+    // POST /api/projects — запись проекта создаётся сразу, дальше части досылаются в неё по id
+    const state = await createProject({ name: name.trim(), object_type: type, site: site.trim() || null });
+    const id = state.project_id;
     update(id, { objectType: type, projectName: name.trim(), projectSite: site.trim() });
     complete(id, 'object');
     navigate(ROUTES.wizardStep(id, 'params'));
@@ -38,7 +44,7 @@ export function NewProjectPage() {
           className="stack stack--lg"
           onSubmit={(e) => {
             e.preventDefault();
-            submit();
+            void submit();
           }}
         >
           <div className="grid grid--2">
@@ -70,8 +76,8 @@ export function NewProjectPage() {
             <ButtonLink to={ROUTES.projects} variant="ghost">
               Отмена
             </ButtonLink>
-            <Button type="submit" variant="primary">
-              Создать и заполнить параметры →
+            <Button type="submit" variant="primary" disabled={creating}>
+              {creating ? 'Создаём…' : 'Создать и заполнить параметры →'}
             </Button>
           </div>
         </form>

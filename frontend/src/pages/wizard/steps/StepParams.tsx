@@ -1,4 +1,7 @@
 import { useMemo, useState } from 'react';
+import { saveProject, useProjectState } from '../../../features/projectApi';
+import type { FieldError } from '../../../shared/api/projectState';
+import type { ObjectParams } from '../../../shared/types/contracts';
 import { Navigate } from 'react-router-dom';
 import {
   MEDICAL_CARGO_CATEGORIES,
@@ -10,14 +13,14 @@ import type { ParamField, ParamValues } from '../../../features/wizard/paramsSch
 import { DEMO_WAREHOUSE_PARAMS } from '../../../shared/mock/projects';
 import { objectTypeLabel } from '../../../shared/mock/dictionaries';
 import { pluralize } from '../../../shared/lib/format';
-import { Alert, Button, Field, NumberField, Progress, Segmented, SelectField, TagsField, TextField } from '../../../shared/ui';
+import { Alert, Button, ComboField, Field, NumberField, Progress, Segmented, SelectField, TagsField, TextField } from '../../../shared/ui';
 import { useWizard } from '../context';
 import { WizardFooter } from '../WizardFooter';
 
 const DEMO_VALUES: Record<string, ParamValues> = {
   warehouse: { ...DEMO_WAREHOUSE_PARAMS },
   airport: {
-    operation_zone: 'Багажное отделение',
+    operation_zone: 'baggage_hall',
     operating_mode: '24/7',
     zone_access: 'closed',
     passenger_flow_per_day: 42_000,
@@ -29,25 +32,29 @@ const DEMO_VALUES: Record<string, ParamValues> = {
     route_length_m: 1200,
     staff_count: 60,
     staff_cost_per_month: 88_000,
-    safety_requirements: ['Досмотр оборудования СБ', 'Ограничение скорости 6 км/ч'],
+    safety_requirements: ['security_check', 'speed_6kmh'],
   },
   medical: {
-    facility_type: 'Многопрофильная больница',
+    facility_type: 'multi_hospital',
     operating_mode: '24/7',
     area_sqm: 64_000,
     floors_count: 9,
     cargo_volume_per_day: { linen: 60, food: 90, drugs: 140, waste: 45 },
-    routes_and_elevators: ['Грузовой лифт в каждом корпусе', 'Подземный тоннель'],
+    routes_and_elevators: ['freight_elevator_each', 'tunnel'],
     staff_count: 38,
     staff_cost_per_month: 62_000,
-    sanitary_requirements: ['Раздельные потоки чистого и грязного', 'Закрытые контейнеры'],
-    access_restrictions: ['Операционный блок'],
+    sanitary_requirements: ['clean_dirty_split', 'closed_containers'],
+    access_restrictions: ['operating_block'],
   },
 };
 
 /** Шаг 2. Параметры объекта: форма из описания, валидация, единицы, подсказки. */
 export function StepParams() {
-  const { draft, update, path } = useWizard();
+  const { draft, update, path, next, isDemo, projectId } = useWizard();
+  const server = useProjectState(projectId, !isDemo);
+  const [saving, setSaving] = useState(false);
+  const [serverErrors, setServerErrors] = useState<FieldError[]>([]);
+  const [conflict, setConflict] = useState(false);
   const type = draft.objectType;
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [triedNext, setTriedNext] = useState(false);
@@ -128,13 +135,24 @@ export function StepParams() {
             }}
           />
         );
+      case 'combo':
+        return (
+          <ComboField
+            key={f.key}
+            {...common}
+            value={typeof v === 'string' ? v : ''}
+            placeholder="Например, 24/7"
+            suggestions={(f.options ?? []).map((o) => (typeof o === 'string' ? o : o.label))}
+            onChange={(s) => setValue(f.key, s)}
+          />
+        );
       case 'tags':
         return (
           <TagsField
             key={f.key}
             {...common}
             value={Array.isArray(v) ? (v as string[]) : []}
-            suggestions={(f.options ?? []).map((o) => (typeof o === 'string' ? o : o.label))}
+            suggestions={f.options ?? []}
             placeholder="Выберите или впишите своё и нажмите Enter"
             onChange={(list) => setValue(f.key, list)}
           />
@@ -229,6 +247,22 @@ export function StepParams() {
           </Alert>
         )}
 
+        {serverErrors.length > 0 && (
+          <Alert tone="danger" title="Сервер не принял параметры">
+            {serverErrors.map((e) => e.message).join(' · ')}
+          </Alert>
+        )}
+        {conflict && (
+          <Alert tone="warn" title="Проект за это время сохранили в другой вкладке">
+            Загружена актуальная запись проекта. Проверьте поля и нажмите «Далее» ещё раз.
+          </Alert>
+        )}
+        {!isDemo && server && server.plan.state !== 'missing' && (
+          <Alert tone="info" title="У проекта уже есть план объекта">
+            Если поменять площадь или рабочие зоны, план на шаге 7 будет помечен как устаревший — он не удалится.
+          </Alert>
+        )}
+
         {draft.staleAfterParams && (
           <Alert tone="warn" title="Параметры изменились после расчёта">
             Подбор и экономика остались от прошлых параметров — после этого шага их нужно будет пересчитать.
@@ -302,14 +336,29 @@ export function StepParams() {
         </div>
       </div>
       <WizardFooter
-        blockedReason={triedNext ? blockedReason : null}
+        blockedReason={saving ? 'Сохраняем параметры…' : triedNext ? blockedReason : null}
         onNext={
           blockedReason
             ? () => {
                 setTriedNext(true);
                 firstError();
               }
-            : undefined
+            : async () => {
+                // Гость ничего не отправляет: демо живёт только во вкладке
+                if (isDemo) return next();
+                if (!server) return;
+                setSaving(true);
+                setServerErrors([]);
+                setConflict(false);
+                const res = await saveProject(projectId, {
+                  base_revision: server.revision,
+                  input: { object_type: type, params: { ...values, object_type: type } as unknown as ObjectParams, source: 'manual' },
+                });
+                setSaving(false);
+                if (res.status === 200) next();
+                else if (res.status === 422) setServerErrors(res.body.errors);
+                else setConflict(true);
+              }
         }
       />
     </>

@@ -94,12 +94,12 @@ export function projectOrDemo(id: string | undefined): ProjectListItem {
 export const DEMO_WAREHOUSE_PARAMS: WarehouseParams = {
   object_type: 'warehouse',
   area_sqm: 12_500,
-  working_zones: ['Приёмка', 'Хранение', 'Комплектация', 'Отгрузка'],
+  working_zones: ['receiving', 'storage', 'picking', 'shipping'],
   operating_mode: '24/7',
   inbound_ops_per_day: 1200,
   internal_ops_per_day: 3400,
   outbound_ops_per_day: 1100,
-  storage_type: 'Фронтальные стеллажи',
+  storage_type: 'selective_rack',
   sku_count: 8400,
   unit_load_weight_kg: 450,
   unit_load_dimensions_mm: '1200×800×1450',
@@ -108,7 +108,7 @@ export const DEMO_WAREHOUSE_PARAMS: WarehouseParams = {
   current_throughput_per_hour: 120,
   route_length_m: 1800,
   available_area_sqm: 4200,
-  layout_constraints: ['Узкие проходы до 2,5 м', 'Колонны с шагом 6×6 м'],
+  layout_constraints: ['narrow_aisles_2_5', 'columns_6x6'],
 };
 
 export interface ProjectVersionItem {

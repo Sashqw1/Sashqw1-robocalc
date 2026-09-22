@@ -13,7 +13,7 @@ function item(id: string, base: Partial2<CatalogItem> & { tags?: string[] }): Ca
     identification: {
       manufacturer: '',
       product_name: '',
-      solution_type: 'AMR',
+      solution_type: 'amr',
       purpose: '',
       country: 'Россия',
       availability_status: 'available',
@@ -71,7 +71,7 @@ export const CATALOG: CatalogItem[] = [
     identification: {
       manufacturer: 'Роботех',
       product_name: 'Вектор-600',
-      solution_type: 'AMR',
+      solution_type: 'amr',
       purpose: 'Перемещение паллет и тележек между зонами склада',
     },
     technical: {
@@ -100,7 +100,7 @@ export const CATALOG: CatalogItem[] = [
     },
     applicability: {
       supported_object_types: ['warehouse', 'medical'],
-      supported_processes: ['Перемещение', 'Приёмка', 'Отгрузка'],
+      supported_processes: ['transport', 'receiving', 'shipping'],
       limitations: ['Не работает на пандусах круче 3°'],
       case_studies: ['Распределительный центр ритейлера, 40 единиц'],
     },
@@ -111,7 +111,7 @@ export const CATALOG: CatalogItem[] = [
     identification: {
       manufacturer: 'Роботех',
       product_name: 'Вектор-1500',
-      solution_type: 'AMR',
+      solution_type: 'amr',
       purpose: 'Перемещение тяжёлых паллет, подъём с пола',
     },
     technical: {
@@ -139,7 +139,7 @@ export const CATALOG: CatalogItem[] = [
     },
     applicability: {
       supported_object_types: ['warehouse'],
-      supported_processes: ['Перемещение', 'Приёмка', 'Отгрузка'],
+      supported_processes: ['transport', 'receiving', 'shipping'],
       limitations: ['Требует ровного пола, перепад ≤ 5 мм/м'],
     },
     tags: ['amr', 'pallet', 'heavy'],
@@ -148,7 +148,7 @@ export const CATALOG: CatalogItem[] = [
     identification: {
       manufacturer: 'НеваТрансРобот',
       product_name: 'Штабелёр S14',
-      solution_type: 'Робот-штабелёр',
+      solution_type: 'stacker',
       purpose: 'Размещение паллет в стеллажи до 6 м',
     },
     technical: {
@@ -174,7 +174,7 @@ export const CATALOG: CatalogItem[] = [
     },
     applicability: {
       supported_object_types: ['warehouse'],
-      supported_processes: ['Приёмка', 'Отгрузка', 'Перемещение'],
+      supported_processes: ['receiving', 'shipping', 'transport'],
       limitations: ['Проход не уже 2,8 м', 'Высота подъёма до 6 м'],
     },
     tags: ['stacker', 'pallet', 'lift'],
@@ -183,7 +183,7 @@ export const CATALOG: CatalogItem[] = [
     identification: {
       manufacturer: 'ГрузАвтоматика',
       product_name: 'Тягач Т3',
-      solution_type: 'Робот-тягач',
+      solution_type: 'tug',
       purpose: 'Буксировка поездов тележек по фиксированным маршрутам',
     },
     technical: {
@@ -209,7 +209,7 @@ export const CATALOG: CatalogItem[] = [
     },
     applicability: {
       supported_object_types: ['warehouse', 'airport'],
-      supported_processes: ['Буксировка', 'Перемещение'],
+      supported_processes: ['towing', 'transport'],
       limitations: ['Нужна разметка QR-метками'],
     },
     data_quality: { confidence: 'unverified', last_updated: '2026-03-18' },
@@ -219,7 +219,7 @@ export const CATALOG: CatalogItem[] = [
     identification: {
       manufacturer: 'Северный Робот',
       product_name: 'Куб-хранилище С9',
-      solution_type: 'Автоматическое хранилище',
+      solution_type: 'asrs',
       purpose: 'Компактное хранение мелкоштучного товара «товар к человеку»',
     },
     technical: {
@@ -242,7 +242,7 @@ export const CATALOG: CatalogItem[] = [
     },
     applicability: {
       supported_object_types: ['warehouse'],
-      supported_processes: ['Комплектация', 'Инвентаризация'],
+      supported_processes: ['picking', 'inventory'],
       limitations: ['Только короба до 30 кг', 'Нужна свободная площадь от 400 м²'],
     },
     data_quality: { confidence: 'verified', last_updated: '2026-08-21' },
@@ -252,7 +252,7 @@ export const CATALOG: CatalogItem[] = [
     identification: {
       manufacturer: 'АвтоЛифт',
       product_name: 'Беспилотный погрузчик Л16',
-      solution_type: 'Беспилотный погрузчик',
+      solution_type: 'forklift',
       purpose: 'Погрузка и разгрузка фур, перемещение паллет на улице и в здании',
     },
     technical: {
@@ -278,7 +278,7 @@ export const CATALOG: CatalogItem[] = [
     },
     applicability: {
       supported_object_types: ['warehouse', 'airport'],
-      supported_processes: ['Приёмка', 'Отгрузка'],
+      supported_processes: ['receiving', 'shipping'],
       limitations: ['Проход не уже 3,2 м'],
     },
     tags: ['forklift', 'outdoor'],
@@ -287,7 +287,7 @@ export const CATALOG: CatalogItem[] = [
     identification: {
       manufacturer: 'ЧистоРобот',
       product_name: 'Уборщик Ч2',
-      solution_type: 'Робот-уборщик',
+      solution_type: 'cleaner',
       purpose: 'Влажная и сухая уборка больших площадей',
     },
     technical: {
@@ -307,7 +307,7 @@ export const CATALOG: CatalogItem[] = [
     },
     applicability: {
       supported_object_types: ['airport', 'medical', 'warehouse'],
-      supported_processes: ['Уборка'],
+      supported_processes: ['cleaning'],
       limitations: ['Производительность указана в м²/ч'],
     },
     tags: ['cleaning'],
@@ -316,7 +316,7 @@ export const CATALOG: CatalogItem[] = [
     identification: {
       manufacturer: 'МедЛогистик',
       product_name: 'Курьер-М',
-      solution_type: 'Робот доставки',
+      solution_type: 'delivery',
       purpose: 'Доставка медикаментов и анализов между отделениями, работа с лифтами',
     },
     technical: {
@@ -342,7 +342,7 @@ export const CATALOG: CatalogItem[] = [
     },
     applicability: {
       supported_object_types: ['medical'],
-      supported_processes: ['Доставка'],
+      supported_processes: ['delivery'],
       limitations: ['Нужна интеграция с системой управления лифтами'],
     },
     data_quality: { confidence: 'verified', last_updated: '2026-07-30' },
@@ -352,7 +352,7 @@ export const CATALOG: CatalogItem[] = [
     identification: {
       manufacturer: 'AeroMove',
       product_name: 'Багажный тягач B2',
-      solution_type: 'Робот-тягач',
+      solution_type: 'tug',
       purpose: 'Перевозка багажных тележек между терминалом и перроном',
       country: 'Россия',
       availability_status: 'upcoming',
@@ -374,7 +374,7 @@ export const CATALOG: CatalogItem[] = [
     },
     applicability: {
       supported_object_types: ['airport'],
-      supported_processes: ['Буксировка'],
+      supported_processes: ['towing'],
       limitations: ['Досмотр СБ перед допуском на перрон'],
     },
     data_quality: { confidence: 'unverified', last_updated: '2026-05-04' },
@@ -384,7 +384,7 @@ export const CATALOG: CatalogItem[] = [
     identification: {
       manufacturer: 'НеваТрансРобот',
       product_name: 'Сортировщик П60',
-      solution_type: 'Сортировочный робот',
+      solution_type: 'sorter',
       purpose: 'Сортировка посылок по направлениям на мезонине',
       availability_status: 'limited',
     },
@@ -404,7 +404,7 @@ export const CATALOG: CatalogItem[] = [
     },
     applicability: {
       supported_object_types: ['warehouse'],
-      supported_processes: ['Отгрузка'],
+      supported_processes: ['shipping'],
       limitations: ['Только посылки до 5 кг', 'Нужен мезонин с люками'],
     },
     tags: ['sorting', 'parcel'],

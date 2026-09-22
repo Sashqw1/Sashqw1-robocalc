@@ -135,7 +135,7 @@ export const useWizardStore = create<WizardState>()(
       reset: (projectId) => set((s) => ({ drafts: { ...s.drafts, [projectId]: emptyDraft() } })),
     }),
     {
-      name: 'robocalc-wizard',
+      name: 'robocalc-wizard-v2',
       storage: createJSONStorage(() => sessionStorage),
     },
   ),

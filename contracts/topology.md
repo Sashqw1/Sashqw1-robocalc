@@ -8,12 +8,21 @@
 | x | float | да | Координата X в системе координат сцены |
 | y | float | да | Координата Y в системе координат сцены |
 
+## Wall
+| Поле | Тип | Обязательное/по умолчанию | Описание |
+|---|---|---|---|
+| id | str | да | Идентификатор стены |
+| points | list[Point2D] | да | Ломаная оси стены, м |
+| thickness_m | float | `0.2` | Толщина, м |
+| tags | list[str] | [] | Теги |
+
 ## Zone
 | Поле | Тип | Обязательное/по умолчанию | Описание |
 |---|---|---|---|
 | id | str | да | Идентификатор зоны |
 | name | str | да | Название зоны |
 | zone_type | ZoneType | да | `storage` / `operation` / `charging` / `restricted` / `transit` |
+| category_id | str \| null | null | id из `dictionaries/categories.json` → `working_zones` (приёмка, хранение…): связывает зону на плане с рабочей зоной из формы |
 | polygon | list[Point2D] | да | Контур зоны в координатах сцены, м |
 | tags | list[str] | [] | Теги зоны (используются matching/compatibility) |
 
@@ -45,6 +54,7 @@
 | id | str | да | Идентификатор конфигурации сцены |
 | project_id | str | да | Идентификатор проекта |
 | scale_m_per_unit | float | `1.0` | Метров на единицу координат сцены |
+| walls | list[Wall] | [] | Стены и контур здания |
 | zones | list[Zone] | [] | Зоны объекта |
 | routes | list[Route] | [] | Маршруты |
 | operation_points | list[OperationPoint] | [] | Точки операций и зарядки |

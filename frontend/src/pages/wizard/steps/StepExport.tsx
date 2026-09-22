@@ -10,6 +10,7 @@ import { Alert, Button, Card, Chip, Stat } from '../../../shared/ui';
 import { GuestLock } from '../GuestLock';
 import { useWizard } from '../context';
 import { WizardFooter } from '../WizardFooter';
+import { solutionTypeLabel } from '../../../shared/dictionaries';
 
 /** Шаг 8. Сводка, сохранение версии, выгрузка. */
 export function StepExport() {
@@ -92,7 +93,7 @@ export function StepExport() {
                     <div key={id} className="row row--between">
                       <span>
                         <strong className="num">{q} ×</strong> {c?.identification.product_name}{' '}
-                        <span className="faint">· {c?.identification.solution_type}</span>
+                        <span className="faint">· {solutionTypeLabel(c?.identification.solution_type ?? '')}</span>
                       </span>
                       <span className="num muted">{formatRubShort((c?.economics.equipment_cost ?? 0) * q)}</span>
                     </div>

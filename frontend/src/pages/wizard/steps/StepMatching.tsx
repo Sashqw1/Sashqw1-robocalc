@@ -12,6 +12,7 @@ import { useMockCalc } from '../../../features/wizard/useMockCalc';
 import { CalcStatus } from '../../../widgets/CalcStatus';
 import { useWizard } from '../context';
 import { WizardFooter } from '../WizardFooter';
+import { solutionTypeLabel } from '../../../shared/dictionaries';
 
 const STATUS_TONE: Record<MatchStatus, Tone> = { recommended: 'ok', needs_review: 'warn', excluded: 'danger' };
 type Filter = 'all' | MatchStatus;
@@ -106,7 +107,7 @@ export function StepMatching() {
                 <option value="">Добавить из каталога вручную…</option>
                 {CATALOG.filter((c) => !candidates.some((x) => x.catalog_item_id === c.id)).map((c) => (
                   <option key={c.id} value={c.id}>
-                    {c.identification.product_name} — {c.identification.solution_type}
+                    {c.identification.product_name} — {solutionTypeLabel(c.identification.solution_type)}
                   </option>
                 ))}
               </select>
@@ -167,7 +168,7 @@ export function StepMatching() {
                               {item.identification.product_name}
                             </Link>
                             <span className="faint">
-                              {item.identification.solution_type} · {item.identification.manufacturer}
+                              {solutionTypeLabel(item.identification.solution_type)} · {item.identification.manufacturer}
                             </span>
                           </div>
                         </td>
