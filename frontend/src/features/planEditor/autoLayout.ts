@@ -1,13 +1,12 @@
 /**
- * Черновик плана по параметрам формы: контур здания по площади, зоны
- * полосами по рабочим зонам, точки зарядки, роботы у зарядки. Нужен, чтобы
- * пользователь не начинал с пустого холста, — и чтобы уже сейчас проверить
- * всю цепочку форма → план → сервер. Редактор Алексея может использовать его
- * как стартовое состояние.
+ * Черновик плана по параметрам формы: границы объекта, контур стен, зоны
+ * полосами по рабочим зонам, точки операций и зарядка, роботы у зарядки.
+ * Нужен, чтобы пользователь не начинал с пустого холста, и чтобы проверять
+ * цепочку форма → план → сервер. Редактор может брать его как стартовое состояние.
  */
 
-import { CATEGORIES, workingZone } from '../../shared/dictionaries';
-import type { TopologyConfig, Zone } from '../../shared/types/contracts';
+import { CATEGORIES, resolveId, workingZone } from '../../shared/dictionaries';
+import type { Bounds, TopologyConfig, Zone } from '../../shared/types/contracts';
 import type { PlanEditorContext } from './types';
 
 const rect = (x: number, y: number, w: number, h: number) => [
@@ -17,29 +16,52 @@ const rect = (x: number, y: number, w: number, h: number) => [
   { x, y: y + h },
 ];
 
+/** Площадь по умолчанию, когда её нет в форме, м² */
+const FALLBACK_AREA = 5000;
+
+/**
+ * Размер объекта для черновика. У аэропорта в форме площади нет (её нет и в
+ * ТЗ), поэтому берём её из протяжённости маршрутов, а если и её нет —
+ * рисуем стандартный прямоугольник и говорим об этом пользователю.
+ */
+export function estimateSize(ctx: PlanEditorContext): { width: number; depth: number; source: 'area' | 'routes' | 'default' } {
+  if (ctx.areaSqm && ctx.areaSqm > 0) {
+    const width = Math.round(Math.sqrt((ctx.areaSqm * 5) / 3));
+    return { width, depth: Math.round(ctx.areaSqm / width), source: 'area' };
+  }
+  if (ctx.routeLengthM && ctx.routeLengthM > 0) {
+    // Маршруты идут вдоль объекта: длина маршрута ≈ длинная сторона
+    const width = Math.round(ctx.routeLengthM);
+    return { width, depth: Math.max(30, Math.round(width / 3)), source: 'routes' };
+  }
+  const width = Math.round(Math.sqrt((FALLBACK_AREA * 5) / 3));
+  return { width, depth: Math.round(FALLBACK_AREA / width), source: 'default' };
+}
+
 export function autoLayout(projectId: string, ctx: PlanEditorContext): TopologyConfig {
-  const area = ctx.areaSqm && ctx.areaSqm > 0 ? ctx.areaSqm : 5000;
-  // Прямоугольник 5:3 нужной площади
-  const width = Math.round(Math.sqrt((area * 5) / 3));
-  const depth = Math.round(area / width);
+  const { width, depth } = estimateSize(ctx);
 
   const zoneIds = ctx.workingZoneIds.length ? ctx.workingZoneIds : ['receiving', 'storage', 'shipping'];
-  const withCharging = zoneIds.includes('charging') ? zoneIds : [...zoneIds, 'charging'];
+  const withCharging = zoneIds.some((id) => resolveId('working_zones', id) === 'charging') ? zoneIds : [...zoneIds, 'charging'];
   const aisle = Math.max(3, Math.ceil((ctx.minAisleWidthM ?? 2) + 1));
   const usable = width - aisle * (withCharging.length + 1);
-  const weights = withCharging.map((id) => (id === 'storage' ? 3 : id === 'charging' ? 0.6 : 1));
+  const weights = withCharging.map((id) => {
+    const canonical = resolveId('working_zones', id);
+    return canonical === 'storage' ? 3 : canonical === 'charging' ? 0.6 : 1;
+  });
   const total = weights.reduce((a, b) => a + b, 0);
 
   let x = aisle;
   const zones: Zone[] = withCharging.map((id, i) => {
     const w = Math.max(4, Math.round((usable * weights[i]) / total));
-    const wz = workingZone(id);
+    const canonical = resolveId('working_zones', id);
+    const wz = workingZone(canonical);
     const label = wz?.label ?? (id.startsWith('custom:') ? id.slice(7) : id);
     const zone: Zone = {
       id: `z-${i + 1}`,
       name: label,
       zone_type: wz?.zone_type ?? 'operation',
-      category_id: wz ? id : null,
+      category_id: wz ? canonical : null,
       polygon: rect(x, aisle, w, depth - aisle * 2),
       tags: [],
     };
@@ -51,39 +73,75 @@ export function autoLayout(projectId: string, ctx: PlanEditorContext): TopologyC
   const cx = charging.polygon[0].x;
   const cy = charging.polygon[0].y;
   const cw = charging.polygon[1].x - cx;
+  const cBottom = charging.polygon[2].y;
 
-  const robots = ctx.robots.flatMap((r) =>
-    Array.from({ length: r.quantity }, (_, k) => ({ catalog_item_id: r.catalog_item_id, k })),
-  );
+  const robotsFlat = ctx.robots.flatMap((r) => Array.from({ length: r.quantity }, () => r));
   const perRow = Math.max(1, Math.floor(cw / 2.5));
+
+  const chargingPoint = {
+    id: 'ch-1',
+    name: 'Зарядная станция',
+    kind: 'charging',
+    // Зарядка — у нижнего края зоны: сверху подпись и стоянка роботов
+    position: { x: cx + cw / 2, y: cBottom - 3 },
+    capacity: Math.max(1, Math.min(robotsFlat.length, perRow)),
+    tags: [],
+  };
+
+  const operationPoints = zones
+    .filter((z) => z.zone_type === 'operation')
+    .map((z, i) => ({
+      id: `op-${i + 1}`,
+      name: `Точка: ${z.name}`,
+      kind: 'operation',
+      position: { x: (z.polygon[0].x + z.polygon[1].x) / 2, y: depth / 2 },
+      capacity: 1,
+      tags: [],
+    }));
+
+  const bounds: Bounds = { origin: { x: 0, y: 0 }, width_m: width, height_m: depth };
+  const first = operationPoints[0];
+  const last = operationPoints[operationPoints.length - 1] ?? first;
 
   return {
     id: '',
     project_id: projectId,
     scale_m_per_unit: 1,
-    walls: [{ id: 'w-outline', points: [...rect(0, 0, width, depth), { x: 0, y: 0 }], thickness_m: 0.4, tags: ['outline'] }],
+    bounds,
+    background: null,
+    walls: [
+      {
+        id: 'w-outline',
+        name: 'Контур здания',
+        points: [...rect(0, 0, width, depth), { x: 0, y: 0 }],
+        thickness_m: 0.4,
+        tags: ['outline'],
+      },
+    ],
     zones,
     routes: [
       {
         id: 'r-main',
+        name: 'Главный проезд',
         points: [
           { x: aisle / 2, y: depth / 2 },
           { x: width - aisle / 2, y: depth / 2 },
         ],
+        direction: 'two_way',
+        from_point_id: first?.id ?? null,
+        to_point_id: last?.id ?? null,
         tags: ['main'],
       },
     ],
-    operation_points: [
-      ...zones
-        .filter((z) => z.zone_type === 'operation')
-        .map((z, i) => ({ id: `op-${i + 1}`, kind: 'operation', position: { x: (z.polygon[0].x + z.polygon[1].x) / 2, y: depth / 2 }, tags: [] })),
-      // Зарядка — у нижнего края зоны: сверху подпись и стоянка роботов
-      { id: 'ch-1', kind: 'charging', position: { x: cx + cw / 2, y: charging.polygon[2].y - 3 }, tags: [] },
-    ],
-    robots: robots.map((r, i) => ({
+    operation_points: [...operationPoints, chargingPoint],
+    robots: robotsFlat.map((r, i) => ({
       id: `rb-${i + 1}`,
+      name: `${r.name} №${i + 1}`,
       catalog_item_id: r.catalog_item_id,
+      category_id: r.category_id ? resolveId('equipment_categories', r.category_id) : null,
       start_position: { x: cx + 1.5 + (i % perRow) * 2.5, y: cy + 5 + Math.floor(i / perRow) * 2.5 },
+      start_rotation_deg: 90,
+      charging_point_id: chargingPoint.id,
     })),
   };
 }

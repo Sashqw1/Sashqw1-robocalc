@@ -1,31 +1,48 @@
 {
-  "$comment": "Единый справочник категорий. Читают: форма параметров объекта (шаг 2), редактор плана (шаг 7), бэкенд (валидация, matching). В данных уходят только id; label — для показа. Новое значение добавляется сюда, а не в код.",
-  "version": 1,
+  "$comment": "Единый справочник категорий. Читают: форма параметров объекта (шаг 2), редактор плана (шаг 7), бэкенд (валидация, matching). Главные идентификаторы — английские snake_case (как в контрактах: ZoneType storage/operation/charging, AcquisitionModel purchase/leasing/raas). Поле aliases — как то же значение называется в справочнике редактора (транслит из таблицы Артёма): сервер принимает алиас на входе, но в данных и ответах всегда возвращает главный id. В данных уходят только id; label — для показа. Новое значение добавляется сюда, а не в код.",
+  "version": 2,
   "zone_types": [
     {
       "id": "storage",
       "label": "Зона хранения",
-      "color": "#2a78d6"
+      "color": "#2a78d6",
+      "aliases": [
+        "hranenie"
+      ]
     },
     {
       "id": "operation",
       "label": "Зона операций",
-      "color": "#eb6834"
+      "color": "#eb6834",
+      "aliases": [
+        "operacii"
+      ]
     },
     {
       "id": "charging",
       "label": "Зона зарядки",
-      "color": "#1baf7a"
+      "color": "#1baf7a",
+      "aliases": [
+        "zaryadka"
+      ]
     },
     {
       "id": "restricted",
       "label": "Ограниченный доступ",
-      "color": "#e34948"
+      "color": "#e34948",
+      "aliases": [
+        "ogranichennyy_dostup",
+        "zapretnaya_zona"
+      ]
     },
     {
       "id": "transit",
       "label": "Транзит, маршрут",
-      "color": "#8b95a1"
+      "color": "#8b95a1",
+      "aliases": [
+        "tranzit",
+        "marshrut"
+      ]
     }
   ],
   "working_zones": [
@@ -35,6 +52,10 @@
       "zone_type": "operation",
       "object_types": [
         "warehouse"
+      ],
+      "aliases": [
+        "zona_priemki",
+        "priemka"
       ]
     },
     {
@@ -43,6 +64,10 @@
       "zone_type": "storage",
       "object_types": [
         "warehouse"
+      ],
+      "aliases": [
+        "zona_hraneniya",
+        "hranenie"
       ]
     },
     {
@@ -51,6 +76,10 @@
       "zone_type": "operation",
       "object_types": [
         "warehouse"
+      ],
+      "aliases": [
+        "zona_komplektacii",
+        "komplektaciya"
       ]
     },
     {
@@ -59,6 +88,10 @@
       "zone_type": "operation",
       "object_types": [
         "warehouse"
+      ],
+      "aliases": [
+        "zona_upakovki",
+        "upakovka"
       ]
     },
     {
@@ -67,6 +100,10 @@
       "zone_type": "operation",
       "object_types": [
         "warehouse"
+      ],
+      "aliases": [
+        "zona_otgruzki",
+        "otgruzka"
       ]
     },
     {
@@ -75,6 +112,10 @@
       "zone_type": "operation",
       "object_types": [
         "warehouse"
+      ],
+      "aliases": [
+        "zona_vozvratov",
+        "vozvraty"
       ]
     },
     {
@@ -85,17 +126,27 @@
         "warehouse",
         "airport",
         "medical"
+      ],
+      "aliases": [
+        "zona_zaryadki",
+        "zaryadka"
       ]
     }
   ],
   "point_kinds": [
     {
       "id": "operation",
-      "label": "Точка операции"
+      "label": "Точка операции",
+      "aliases": [
+        "tochka_operacii"
+      ]
     },
     {
       "id": "charging",
-      "label": "Точка зарядки"
+      "label": "Точка зарядки",
+      "aliases": [
+        "tochka_zaryadki"
+      ]
     }
   ],
   "equipment_categories": [
@@ -105,6 +156,10 @@
       "footprint_m": [
         1.2,
         0.8
+      ],
+      "aliases": [
+        "amr_robot",
+        "robot_amr"
       ]
     },
     {
@@ -113,6 +168,10 @@
       "footprint_m": [
         1.9,
         0.9
+      ],
+      "aliases": [
+        "robot_shtabeler",
+        "shtabeler"
       ]
     },
     {
@@ -121,6 +180,10 @@
       "footprint_m": [
         1.4,
         0.7
+      ],
+      "aliases": [
+        "robot_tyagach",
+        "tyagach"
       ]
     },
     {
@@ -129,6 +192,10 @@
       "footprint_m": [
         2.4,
         1.2
+      ],
+      "aliases": [
+        "bespilotnyy_pogruzchik",
+        "pogruzchik"
       ]
     },
     {
@@ -137,6 +204,10 @@
       "footprint_m": [
         1.0,
         0.7
+      ],
+      "aliases": [
+        "robot_uborshchik",
+        "uborshchik"
       ]
     },
     {
@@ -145,6 +216,10 @@
       "footprint_m": [
         10.0,
         8.0
+      ],
+      "aliases": [
+        "avtomaticheskoe_hranilishche",
+        "hranilishche"
       ]
     },
     {
@@ -153,6 +228,10 @@
       "footprint_m": [
         0.5,
         0.5
+      ],
+      "aliases": [
+        "sortirovochnyy_robot",
+        "sorter_robot"
       ]
     },
     {
@@ -161,6 +240,10 @@
       "footprint_m": [
         0.7,
         0.5
+      ],
+      "aliases": [
+        "robot_dostavki",
+        "dostavka"
       ]
     }
   ],

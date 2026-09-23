@@ -1,7 +1,13 @@
 # Форма, редактор плана и API: как соединяем
 
-Версия 1 · 22.09.2026 · Владимиров. Решения приняты; редактор Алексея
-подстраивается под них. Что поменять у себя — в разделе 6.
+Версия 2 · 24.09.2026 · Владимиров. Решения приняты; редактор Алексея
+подстраивается под них. Что поменять у себя — в разделе 6, ответы на заявку
+Алексея от 24.09 — в разделе 9.
+
+Изменения версии 2: маршруты приведены к `api-routes.md` (было одной ручкой
+`PATCH`, стало `PUT /input` и `PUT /scene`), подложка-чертёж грузится отдельно,
+сервер возвращает предупреждения по плану, план расширен (границы, названия,
+направление маршрутов, места у зарядки, поворот робота), справочники сведены.
 
 Код, на котором всё это уже работает:
 
@@ -148,49 +154,55 @@ interface PlanEditorProps {
 | Метод | Путь | Тело | Ответ |
 |---|---|---|---|
 | `POST` | `/api/projects` | `ProjectCreateRequest` | `201 ProjectState` |
-| `GET` | `/api/projects/{project_id}` | — | `200 ProjectState` |
-| `PATCH` | `/api/projects/{project_id}` | `ProjectSaveRequest` | `200 ProjectState` / `409 ConflictResponse` / `422 ValidationErrorResponse` |
-| `POST` | `/api/projects/{project_id}/versions` | — | снапшот `ProjectVersion` (шаг 8) |
+| `GET` | `/api/projects/{id}` | — | `200 ProjectState` |
+| `PUT` | `/api/projects/{id}/input` | `InputSaveRequest` | `200 ProjectState` / `409` / `422` |
+| `PUT` | `/api/projects/{id}/scene` | `SceneSaveRequest` | `200 ProjectState` (с `scene.warnings`) / `409` / `422` |
+| `POST` | `/api/projects/{id}/scene/background` | multipart, поле `file` | `201 BackgroundUploadResponse` |
+| `POST` | `/api/projects/{id}/versions` | — | снапшот `ProjectVersion` (шаг 8) |
 
-Параметры с формы и план из редактора — **один и тот же `PATCH`** в одну
-запись проекта. В теле присылается одна часть или обе; часть, которой нет
-в теле, не меняется.
+Пути — из [api-routes.md](../../api-routes.md) (разделы 3, 6 и 11). Ручки
+**разные, но запись одна**: обе части живут в одном проекте под одним
+`project_id`, и обе ручки возвращают полное состояние записи — какие части
+сохранены и чего ещё нет.
 
 ### Запрос
 
 ```jsonc
-// PATCH /api/projects/p-leningradka   — шаг 2, «Далее»
+// PUT /api/projects/p-leningradka/input   — шаг 2, «Далее»
 {
   "base_revision": 3,                  // revision, которую клиент видел последней
-  "input": {
-    "object_type": "warehouse",
-    "source": "manual",
-    "params": {
+  "object_type": "warehouse",
+  "source": "manual",
+  "params": {
       "object_type": "warehouse",
       "area_sqm": 12500,
       "working_zones": ["receiving", "storage", "picking", "shipping"],   // id из справочника
       "operating_mode": "24/7",                                            // свободный текст по ТЗ
       "storage_type": "selective_rack",
       "layout_constraints": ["narrow_aisles_2_5", "custom:Сквозной проезд для фур"],
-      "...": "остальные поля WarehouseParams"
-    }
+    "...": "остальные поля WarehouseParams"
   }
 }
 ```
 
 ```jsonc
-// PATCH /api/projects/p-leningradka   — шаг 7, «Сохранить план» (можно через день)
+// PUT /api/projects/p-leningradka/scene   — шаг 7, «Сохранить план» (можно через день)
 {
   "base_revision": 4,
-  "plan": {
-    "based_on_input_revision": 4,      // по каким параметрам рисовали
-    "plan": {
-      "id": "", "project_id": "p-leningradka", "scale_m_per_unit": 1,
-      "walls": [{ "id": "w-outline", "points": [{"x":0,"y":0}, {"x":144,"y":0}, "..."], "thickness_m": 0.4, "tags": ["outline"] }],
-      "zones": [{ "id": "z-1", "name": "Приёмка", "zone_type": "operation", "category_id": "receiving", "polygon": ["..."], "tags": [] }],
-      "routes": [], "operation_points": [{ "id": "ch-1", "kind": "charging", "position": {"x":130,"y":4}, "tags": [] }],
-      "robots": [{ "id": "rb-1", "catalog_item_id": "amr-vektor-600", "start_position": {"x":126,"y":9} }]
-    }
+  "based_on_input_revision": 4,        // по каким параметрам рисовали
+  "scene": {
+    "id": "", "project_id": "p-leningradka", "scale_m_per_unit": 1,
+    "bounds": { "origin": {"x":0,"y":0}, "width_m": 144, "height_m": 87 },
+    "background": { "background_id": "bg-7f3", "url": "/files/bg-7f3.png", "width_px": 2480, "height_px": 1750,
+                    "scale_m_per_px": 0.058, "offset": {"x":0,"y":0}, "rotation_deg": 0, "opacity": 0.5 },
+    "walls": [{ "id": "w-outline", "name": "Контур здания", "points": ["..."], "thickness_m": 0.4, "tags": ["outline"] }],
+    "zones": [{ "id": "z-1", "name": "Приёмка", "zone_type": "operation", "category_id": "receiving", "polygon": ["..."], "tags": [] }],
+    "routes": [{ "id": "r-main", "name": "Главный проезд", "points": ["..."], "direction": "one_way",
+                 "from_point_id": "op-1", "to_point_id": "op-3", "tags": [] }],
+    "operation_points": [{ "id": "ch-1", "name": "Зарядная станция", "kind": "charging",
+                           "position": {"x":130,"y":4}, "capacity": 4, "tags": [] }],
+    "robots": [{ "id": "rb-1", "name": "AMR №1", "catalog_item_id": "amr-vektor-600", "category_id": "amr",
+                 "start_position": {"x":126,"y":9}, "start_rotation_deg": 90, "charging_point_id": "ch-1" }]
   }
 }
 ```
@@ -207,16 +219,18 @@ interface PlanEditorProps {
   "revision": 4,
   "dictionary_version": 1,
   "input": { "state": "saved",   "revision": 4, "saved_at": "2026-09-22T10:15:00Z", "data": { "...": "ProjectInput" } },
-  "plan":  { "state": "missing", "revision": null, "saved_at": null, "based_on_input_revision": null, "data": null },
-  "missing_parts":  ["plan"],     // чего ещё нет
+  "scene": { "state": "missing", "revision": null, "saved_at": null, "based_on_input_revision": null,
+             "data": null, "warnings": [] },
+  "missing_parts":  ["scene"],    // чего ещё нет
   "blocking_parts": [],           // что мешает считать подбор и экономику: план не мешает
   "current_version": 3,
   "created_at": "...", "updated_at": "..."
 }
 ```
 
-После сохранения плана: `revision: 5`, `plan.state: "saved"`,
-`plan.based_on_input_revision: 4`, `missing_parts: []`.
+После сохранения плана: `revision: 5`, `scene.state: "saved"`,
+`scene.based_on_input_revision: 4`, `missing_parts: []`, в `scene.warnings` —
+замечания по плану (см. раздел 9.3).
 
 ### Правила
 
@@ -313,3 +327,120 @@ interface PlanEditorProps {
    нужен debounce и тот же `base_revision`.
 3. `custom:` значения — показывать ли их админу в `/admin/dictionaries` как
    кандидатов на добавление в справочник.
+
+---
+
+## 9. Ответы на заявку Алексея от 24.09.2026
+
+Коротко: **согласен со всем**, кроме одного уточнения по справочнику. Всё, что
+касается контрактов и сервера, уже сделано — переписывать `topology.py` руками
+не нужно, он уже расширен (версия 2). Ниже по пунктам.
+
+### 9.1. Расширить формат плана — сделано
+
+Добавлено в `contracts/topology.py` и `topology.md`:
+
+| Что просили | Как называется | Примечание |
+|---|---|---|
+| границы объекта | `TopologyConfig.bounds` → `Bounds {origin, width_m, height_m}` | если не задано — считается по контуру стен |
+| подложка (скан чертежа) | `TopologyConfig.background` → `SceneBackground` | **только ссылка**, см. 9.2 |
+| названия у стен, точек, маршрутов, роботов | `name: str \| null` у `Wall`, `OperationPoint`, `Route`, `RobotPlacement` | у `Zone` имя было и раньше |
+| количество мест у зарядки | `OperationPoint.capacity: int = 1` | для обычной точки — сколько роботов обслуживается одновременно |
+| направление маршрута | `Route.direction: "two_way" \| "one_way"` | `one_way` — от первой точки ломаной к последней |
+| привязка маршрута к точкам | `Route.from_point_id`, `Route.to_point_id` | ссылки на `OperationPoint.id` |
+| вид робота | `RobotPlacement.category_id` | id из `equipment_categories`, когда модель не выбрана |
+| поворот на старте | `RobotPlacement.start_rotation_deg: float = 0` | 0 — вдоль оси X |
+| зарядка робота | `RobotPlacement.charging_point_id` | ссылка на точку с `kind: "charging"` |
+| пустой `catalog_item_id` | `catalog_item_id: str = ""` | пусто разрешено и проверкой сервера |
+
+### 9.2. Отдельная загрузка подложки — сделано
+
+`POST /api/projects/{id}/scene/background` (multipart, поле `file`) → в ответе
+`background_id`, `url`, размер в пикселях. В плане остаётся `SceneBackground`
+со ссылкой, так что мегабайты при каждом сохранении не летают. Калибровка
+(`scale_m_per_px`), смещение, поворот и прозрачность — в плане, а не в файле.
+Ограничения: png, jpeg, pdf, до 25 МБ. Маршрут добавлен в `api-routes.md`, §11.1.
+
+Загрузку делает визард (`uploadBackground` в `features/projectApi`), редактор
+получает готовую ссылку в `value.background` и вызов `onUploadBackground(file)`
+в props, если хочет свою кнопку.
+
+### 9.3. Предупреждения с сервера — сделано
+
+`ProjectState.scene.warnings: SceneWarning[]` в ответе на `PUT /scene`.
+`SceneWarning {code, severity, message, target_kind, target_id}` — по
+`target_id` редактор подсвечивает элемент.
+
+Коды, которые сервер считает сейчас: `route_crosses_wall`,
+`robot_in_restricted_zone`, `aisle_too_narrow` (маршрут ближе половины нужного
+прохода к стене), `zone_outside_bounds`, `route_not_linked`,
+`charging_capacity_exceeded`, `scene_area_differs_from_form` (площадь плана
+расходится с формой больше чем на 20 %). `severity: error` означает, что план
+сохранён, но симуляция по нему не пойдёт.
+
+Эталонная реализация всех проверок лежит в
+`frontend/src/features/projectApi/sceneChecks.ts` — геометрия там честная
+(пересечение отрезков, точка в полигоне, расстояние до отрезка), бэкенду можно
+переносить формулы оттуда. Редактор может дублировать их локально для
+мгновенной подсветки, но истина — ответ сервера: те же замечания увидят
+симуляция и отчёт.
+
+### 9.4. Стоимость персонала — за одного сотрудника
+
+В ТЗ написано «стоимость персонала в месяц», в контракте — «₽/мес **на одного
+сотрудника**». Правильным считаем контракт, потому что экономика умножает:
+`staff_count × staff_cost_per_month × 12`. Если бы это был фонд на всех, формула
+завышала бы эффект в `staff_count` раз.
+
+Что сделано в форме: подпись «Стоимость одного сотрудника», подсказка «на
+одного человека, с налогами и взносами», и рядом считается контрольная сумма —
+«на всех выходит N ₽ в месяц». Ошибку теперь видно сразу при вводе.
+
+### 9.5. Один справочник — сведён, главные id английские
+
+Главными оставляем **английские snake_case**: `receiving`, `storage`,
+`stacker`, `amr`. Причина не вкусовая: значения из того же справочника уже
+лежат в контрактах как enum (`ZoneType: storage/operation/charging/restricted/transit`,
+`AcquisitionModel: purchase/leasing/raas`) и в каталоге через CPE. Транслит
+(`zona_priemki`, `robot_shtabeler`) пришлось бы конвертировать в трёх местах.
+
+Чтобы тебе ничего не переписывать: в `contracts/dictionaries/categories.json`
+у значений появилось поле `aliases` с твоими названиями, и сервер **принимает
+алиас на входе**, а в ответах и в данных возвращает главный id.
+
+```jsonc
+{ "id": "receiving", "label": "Приёмка", "zone_type": "operation",
+  "aliases": ["zona_priemki", "priemka"] }
+{ "id": "stacker", "label": "Робот-штабелёр",
+  "aliases": ["robot_shtabeler", "shtabeler"] }
+```
+
+Алиасы проставлены для всех рабочих зон, типов зон, видов точек и категорий
+техники (22 значения). **Пришли свой `categories.json`** — допишу недостающее
+и добавлю алиасы к остальным; если в нём есть значения, которых у нас нет, они
+переедут в общий файл, а не останутся отдельным списком.
+
+### 9.6. Хватает ли данных симуляции — вопрос к Стасу
+
+В план добавлено ровно то, что ты перечислил: направление маршрута, привязка
+маршрута к точкам, стартовый поворот робота, его точка старта и зарядка, плюс
+число мест у зарядки. Для `SimulationTimeline` этого, по-моему, достаточно:
+робот стартует из `start_position` с `start_rotation_deg`, едет по маршрутам
+между `from_point_id` и `to_point_id`, возвращается на `charging_point_id`,
+а `capacity` ограничивает очередь на зарядке.
+
+Чего в плане **нет** и что, возможно, понадобится Стасу — решаем вместе:
+скорость движения внутри зон (ограничения), приоритет маршрутов, расписание
+операций (сколько задач в час на точку). Скорость робота и производительность
+пока берутся из каталога, а не из плана.
+
+### 9.7. Перенос редактора: react-konva и vitest — согласен
+
+Обе зависимости нормальные: konva закрывает холст, vitest ложится на Vite без
+отдельного конфига. Просьбы к переносу:
+
+- ставить как `npm i react-konva konva` и `npm i -D vitest` в `frontend/`,
+  отдельный `package.json` не заводить;
+- тесты рядом с кодом (`*.test.ts`), скрипт `npm test` добавлю я;
+- сборка после переноса должна проходить `npm run build` и `npm run lint` без
+  новых предупреждений — сейчас оба чистые.

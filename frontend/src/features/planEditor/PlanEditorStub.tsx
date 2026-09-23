@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { catalogById } from '../../shared/mock/catalog';
-import { labelOf } from '../../shared/dictionaries';
+import { labelOf, resolveId } from '../../shared/dictionaries';
 import type { TopologyConfig, Zone } from '../../shared/types/contracts';
 import type { PlanEditorProps } from './types';
 import { ZONE_COLOR } from './autoLayout';
@@ -19,6 +19,10 @@ const TOOLS = [
 ];
 
 function bounds(plan: TopologyConfig) {
+  if (plan.bounds) {
+    const b = plan.bounds;
+    return { minX: b.origin.x, minY: b.origin.y, maxX: b.origin.x + b.width_m, maxY: b.origin.y + b.height_m };
+  }
   const pts = [...plan.walls.flatMap((w) => w.points), ...plan.zones.flatMap((z) => z.polygon)];
   if (!pts.length) return { minX: 0, minY: 0, maxX: 100, maxY: 60 };
   return {
@@ -30,13 +34,13 @@ function bounds(plan: TopologyConfig) {
 }
 
 /**
- * ВРЕМЕННАЯ реализация PlanEditorProps: показывает план, даёт выбрать зону и
- * поправить её название и категорию. Инструменты рисования — в редакторе
- * Алексея, который встаёт на место этого компонента с тем же интерфейсом.
- * Раскладка уже та, что нужна на 1366×768: рейка инструментов 48 px,
- * холст, панель свойств 264 px.
+ * ВРЕМЕННАЯ реализация PlanEditorProps: показывает план с подложкой, даёт
+ * выбрать зону и поправить её название и категорию, подсвечивает
+ * предупреждения сервера. Инструменты рисования — в редакторе Алексея,
+ * который встаёт на место этого компонента с тем же интерфейсом.
+ * Раскладка уже нужная: рейка инструментов 48 px, холст, свойства 264 px.
  */
-export function PlanEditorStub({ value, onChange, context, categories, width, height, readOnly }: PlanEditorProps) {
+export function PlanEditorStub({ value, onChange, context, categories, warnings, width, height, readOnly }: PlanEditorProps) {
   const [selected, setSelected] = useState<string | null>(null);
   const canvasW = Math.max(200, width - RAIL_W - PANEL_W);
   const canvasH = Math.max(200, height);
@@ -48,10 +52,13 @@ export function PlanEditorStub({ value, onChange, context, categories, width, he
     const k = Math.min((canvasW - pad * 2) / (b.maxX - b.minX || 1), (canvasH - pad * 2) / (b.maxY - b.minY || 1));
     const ox = pad + (canvasW - pad * 2 - (b.maxX - b.minX) * k) / 2 - b.minX * k;
     const oy = pad + (canvasH - pad * 2 - (b.maxY - b.minY) * k) / 2 - b.minY * k;
-    return { k, x: (m: number) => ox + m * k, y: (m: number) => oy + m * k, b };
+    return { k, x: (m: number) => ox + m * k, y: (m: number) => oy + m * k };
   }, [value, canvasW, canvasH]);
 
   const zone = value?.zones.find((z) => z.id === selected) ?? null;
+  const flagged = new Set(warnings.map((w) => w.target_id).filter((id): id is string => Boolean(id)));
+  const warningsFor = (id: string) => warnings.filter((w) => w.target_id === id);
+
   const patchZone = (id: string, patch: Partial<Zone>) => {
     if (!value) return;
     onChange({ ...value, zones: value.zones.map((z) => (z.id === id ? { ...z, ...patch } : z)) });
@@ -59,6 +66,7 @@ export function PlanEditorStub({ value, onChange, context, categories, width, he
 
   const placed = value?.robots.length ?? 0;
   const needed = context.robots.reduce((s, r) => s + r.quantity, 0);
+  const bg = value?.background ?? null;
 
   return (
     <div className="plan-editor" style={{ width, height }}>
@@ -77,15 +85,31 @@ export function PlanEditorStub({ value, onChange, context, categories, width, he
               <pattern id="grid" width={view.k * 5} height={view.k * 5} patternUnits="userSpaceOnUse" x={view.x(0)} y={view.y(0)}>
                 <path d={`M ${view.k * 5} 0 L 0 0 0 ${view.k * 5}`} fill="none" stroke="var(--line)" strokeWidth="0.5" />
               </pattern>
+              <marker id="arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto">
+                <path d="M 0 0 L 8 4 L 0 8 z" fill="var(--faint)" />
+              </marker>
             </defs>
             <rect width={canvasW} height={canvasH} fill="url(#grid)" />
 
+            {/* Подложка-чертёж: в плане только ссылка, файл на сервере */}
+            {bg && (
+              <image
+                href={bg.url}
+                x={view.x(bg.offset.x)}
+                y={view.y(bg.offset.y)}
+                width={bg.width_px * bg.scale_m_per_px * view.k}
+                height={bg.height_px * bg.scale_m_per_px * view.k}
+                opacity={bg.opacity}
+                transform={bg.rotation_deg ? `rotate(${bg.rotation_deg} ${view.x(bg.offset.x)} ${view.y(bg.offset.y)})` : undefined}
+              />
+            )}
+
             {value.zones.map((z) => {
               const pts = z.polygon.map((p) => `${view.x(p.x)},${view.y(p.y)}`).join(' ');
-              // Подпись — у верхнего края зоны: центр занят маршрутом и точками операций
               const cx = z.polygon.reduce((s, p) => s + p.x, 0) / z.polygon.length;
               const top = Math.min(...z.polygon.map((p) => p.y));
               const color = ZONE_COLOR[z.zone_type] ?? '#8b95a1';
+              const bad = flagged.has(z.id);
               return (
                 <g
                   key={z.id}
@@ -95,7 +119,14 @@ export function PlanEditorStub({ value, onChange, context, categories, width, he
                   }}
                   style={{ cursor: 'pointer' }}
                 >
-                  <polygon points={pts} fill={color} fillOpacity={selected === z.id ? 0.32 : 0.16} stroke={color} strokeWidth={selected === z.id ? 2.5 : 1.5} />
+                  <polygon
+                    points={pts}
+                    fill={color}
+                    fillOpacity={selected === z.id ? 0.32 : 0.16}
+                    stroke={bad ? 'var(--danger)' : color}
+                    strokeWidth={selected === z.id || bad ? 2.5 : 1.5}
+                    strokeDasharray={bad ? '6 4' : undefined}
+                  />
                   <text x={view.x(cx)} y={view.y(top) + 16} textAnchor="middle" dominantBaseline="middle" className="plan-editor__label">
                     {z.name}
                   </text>
@@ -108,18 +139,59 @@ export function PlanEditorStub({ value, onChange, context, categories, width, he
             ))}
 
             {value.routes.map((r) => (
-              <polyline key={r.id} points={r.points.map((p) => `${view.x(p.x)},${view.y(p.y)}`).join(' ')} fill="none" stroke="var(--faint)" strokeWidth={2} strokeDasharray="6 5" />
+              <polyline
+                key={r.id}
+                points={r.points.map((p) => `${view.x(p.x)},${view.y(p.y)}`).join(' ')}
+                fill="none"
+                stroke={flagged.has(r.id) ? 'var(--danger)' : 'var(--faint)'}
+                strokeWidth={2}
+                strokeDasharray="6 5"
+                markerEnd={r.direction === 'one_way' ? 'url(#arrow)' : undefined}
+              />
             ))}
 
             {value.operation_points.map((p) => (
-              <circle key={p.id} cx={view.x(p.position.x)} cy={view.y(p.position.y)} r={6} fill={p.kind === 'charging' ? ZONE_COLOR.charging : 'var(--surface)'} stroke={p.kind === 'charging' ? ZONE_COLOR.charging : 'var(--ink)'} strokeWidth={2}>
-                <title>{labelOf('point_kinds', p.kind)}</title>
-              </circle>
+              <g key={p.id}>
+                <circle
+                  cx={view.x(p.position.x)}
+                  cy={view.y(p.position.y)}
+                  r={6}
+                  fill={p.kind === 'charging' ? ZONE_COLOR.charging : 'var(--surface)'}
+                  stroke={flagged.has(p.id) ? 'var(--danger)' : p.kind === 'charging' ? ZONE_COLOR.charging : 'var(--ink)'}
+                  strokeWidth={2}
+                >
+                  <title>
+                    {p.name ?? labelOf('point_kinds', p.kind)}
+                    {p.kind === 'charging' ? ` · мест: ${p.capacity}` : ''}
+                  </title>
+                </circle>
+                {p.kind === 'charging' && p.capacity > 1 && (
+                  <text x={view.x(p.position.x) + 9} y={view.y(p.position.y) - 7} className="plan-editor__label">
+                    ×{p.capacity}
+                  </text>
+                )}
+              </g>
             ))}
 
             {value.robots.map((r) => (
-              <rect key={r.id} x={view.x(r.start_position.x) - 5} y={view.y(r.start_position.y) - 5} width={10} height={10} rx={2} fill="var(--accent)" stroke="var(--surface)" strokeWidth={1.5}>
-                <title>{catalogById(r.catalog_item_id)?.identification.product_name ?? r.catalog_item_id}</title>
+              <rect
+                key={r.id}
+                x={view.x(r.start_position.x) - 5}
+                y={view.y(r.start_position.y) - 5}
+                width={10}
+                height={10}
+                rx={2}
+                fill={flagged.has(r.id) ? 'var(--danger)' : 'var(--accent)'}
+                stroke="var(--surface)"
+                strokeWidth={1.5}
+                transform={`rotate(${r.start_rotation_deg} ${view.x(r.start_position.x)} ${view.y(r.start_position.y)})`}
+              >
+                <title>
+                  {r.name ?? r.id} ·{' '}
+                  {r.catalog_item_id
+                    ? (catalogById(r.catalog_item_id)?.identification.product_name ?? r.catalog_item_id)
+                    : `вид: ${labelOf('equipment_categories', resolveId('equipment_categories', r.category_id ?? ''))}`}
+                </title>
               </rect>
             ))}
 
@@ -183,9 +255,24 @@ export function PlanEditorStub({ value, onChange, context, categories, width, he
                 </select>
               </div>
             </label>
+            {warningsFor(zone.id).map((w) => (
+              <span key={w.code} className="field__error">
+                {w.message}
+              </span>
+            ))}
           </div>
         ) : (
           <div className="stack stack--sm">
+            {warnings.length > 0 && (
+              <>
+                <span className="label">Проверки сервера</span>
+                {warnings.map((w, i) => (
+                  <span key={`${w.code}-${i}`} className={w.severity === 'error' ? 'field__error' : w.severity === 'warning' ? 'field__warn' : 'faint'}>
+                    {w.message}
+                  </span>
+                ))}
+              </>
+            )}
             <span className="label">Легенда</span>
             {categories.zone_types.map((t) => (
               <span key={t.id} className="row" style={{ gap: 8 }}>
@@ -200,6 +287,11 @@ export function PlanEditorStub({ value, onChange, context, categories, width, he
               расставлено {placed} из {needed}
             </span>
             {context.minAisleWidthM && <span className="faint">Нужная ширина прохода: от {context.minAisleWidthM.toString().replace('.', ',')} м</span>}
+            {bg ? (
+              <span className="faint">Подложка: {bg.width_px}×{bg.height_px} px, масштаб {bg.scale_m_per_px} м/px</span>
+            ) : (
+              <span className="faint">Подложка не загружена — кнопка «Подложка» сверху</span>
+            )}
             <span className="faint" style={{ marginTop: 10 }}>
               Нажмите на зону, чтобы изменить её свойства.
             </span>

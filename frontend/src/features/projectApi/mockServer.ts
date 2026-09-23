@@ -1,33 +1,37 @@
 /**
- * Мок сервера проектов — ЗАГЛУШКА до backend-glue. Держит ту же логику, что
- * описана в contracts/project_state.py и docs/integration/editor-and-api.md:
+ * Мок сервера проектов — ЗАГЛУШКА до backend-glue. Логика та же, что в
+ * contracts/project_state.py и api-routes.md (разделы 3, 6, 11):
  * одна запись на проект, общий счётчик revision, 409 при устаревшей
  * base_revision, 422 при ошибках, план без параметров не принимается,
- * план устаревает, если параметры сохранили после него.
- * Хранится в sessionStorage вкладки.
+ * план устаревает, если параметры сохранили после него, предупреждения
+ * по плану считает сервер. Хранится в sessionStorage вкладки.
  */
 
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
-import { CATEGORIES } from '../../shared/dictionaries';
+import { CATEGORIES, resolveId } from '../../shared/dictionaries';
 import { catalogById } from '../../shared/mock/catalog';
 import { DEMO_WAREHOUSE_PARAMS, projectById } from '../../shared/mock/projects';
-import type { ObjectParams, ProjectInput } from '../../shared/types/contracts';
+import type { ObjectParams, ProjectInput, TopologyConfig } from '../../shared/types/contracts';
 import type {
+  BackgroundUploadResponse,
   FieldError,
-  PlanPartState,
+  InputSaveRequest,
   ProjectCreateRequest,
   ProjectPart,
-  ProjectSaveRequest,
   ProjectState,
   SaveResult,
+  SceneSaveRequest,
+  ScenePartState,
 } from '../../shared/api/projectState';
 import { validateParams } from '../wizard/paramsSchema';
 import { autoLayout } from '../planEditor/autoLayout';
+import { checkScene } from './sceneChecks';
+import type { SceneCheckContext } from './sceneChecks';
 
 export interface ApiLogEntry {
   at: string;
-  method: 'GET' | 'POST' | 'PATCH';
+  method: 'GET' | 'POST' | 'PUT' | 'DELETE';
   url: string;
   request: unknown;
   status: number;
@@ -49,7 +53,7 @@ export const useApiDb = create<ApiDb>()(
       put: (p) => set((s) => ({ projects: { ...s.projects, [p.project_id]: p } })),
       record: (e) => set((s) => ({ log: [e, ...s.log].slice(0, 20) })),
     }),
-    { name: 'robocalc-api', storage: createJSONStorage(() => sessionStorage), partialize: (s) => ({ projects: s.projects, log: s.log }) },
+    { name: 'robocalc-api-v2', storage: createJSONStorage(() => sessionStorage), partialize: (s) => ({ projects: s.projects, log: s.log }) },
   ),
 );
 
@@ -58,11 +62,18 @@ const now = () => new Date().toISOString();
 function derive(p: Omit<ProjectState, 'missing_parts' | 'blocking_parts'>): ProjectState {
   const missing: ProjectPart[] = [];
   if (p.input.state === 'missing') missing.push('input');
-  if (p.plan.state === 'missing') missing.push('plan');
+  if (p.scene.state === 'missing') missing.push('scene');
   return { ...p, missing_parts: missing, blocking_parts: p.input.state === 'missing' ? ['input'] : [] };
 }
 
-const EMPTY_PLAN: PlanPartState = { state: 'missing', revision: null, saved_at: null, based_on_input_revision: null, data: null };
+const EMPTY_SCENE: ScenePartState = {
+  state: 'missing',
+  revision: null,
+  saved_at: null,
+  based_on_input_revision: null,
+  data: null,
+  warnings: [],
+};
 
 function makeInput(projectId: string, revision: number, params: ObjectParams, source: ProjectInput['source'], at: string): ProjectInput {
   return { id: `pi-${projectId}-${revision}`, project_id: projectId, object_type: params.object_type, params, created_at: at, source };
@@ -75,6 +86,28 @@ function seed(projectId: string): ProjectState {
   const hasInput = Boolean(mock && mock.last_step !== 'object' && mock.last_step !== 'params');
   const params: ObjectParams | null = hasInput && mock?.object_type === 'warehouse' ? { ...DEMO_WAREHOUSE_PARAMS } : null;
   const revision = hasInput ? mock!.current_version : 0;
+
+  // У архивного пилота план уже нарисован — пример записи «параметры + план»
+  let scene: ScenePartState = EMPTY_SCENE;
+  if (projectId === 'p-old-kazan' && params) {
+    const drawn = autoLayout(projectId, {
+      objectType: 'warehouse',
+      areaSqm: 8000,
+      routeLengthM: null,
+      workingZoneIds: params.working_zones,
+      robots: [{ catalog_item_id: 'amr-vektor-600', name: 'Вектор-600', category_id: 'amr', quantity: 12 }],
+      minAisleWidthM: 1.6,
+    });
+    scene = {
+      state: 'saved',
+      revision,
+      saved_at: at,
+      based_on_input_revision: revision,
+      data: { ...drawn, id: `topo-${projectId}-${revision}` },
+      warnings: checkScene(drawn, { minAisleWidthM: 1.6, formAreaSqm: 8000 }),
+    };
+  }
+
   return derive({
     project_id: projectId,
     name: mock?.name ?? 'Новый проект',
@@ -86,26 +119,7 @@ function seed(projectId: string): ProjectState {
     input: hasInput
       ? { state: 'saved', revision, saved_at: at, data: params ? makeInput(projectId, revision, params, 'manual', at) : null }
       : { state: 'missing', revision: null, saved_at: null, data: null },
-    // У архивного пилота план уже нарисован — пример записи «параметры + план»
-    plan:
-      projectId === 'p-old-kazan' && params?.object_type === 'warehouse'
-        ? {
-            state: 'saved',
-            revision,
-            saved_at: at,
-            based_on_input_revision: revision,
-            data: {
-              ...autoLayout(projectId, {
-                objectType: 'warehouse',
-                areaSqm: 8000,
-                workingZoneIds: params.working_zones,
-                robots: [{ catalog_item_id: 'amr-vektor-600', name: 'Вектор-600', category_id: 'amr', quantity: 12 }],
-                minAisleWidthM: 1.6,
-              }),
-              id: `topo-${projectId}-${revision}`,
-            },
-          }
-        : EMPTY_PLAN,
+    scene,
     current_version: mock?.current_version ?? 1,
     created_at: mock?.created_at ?? at,
     updated_at: at,
@@ -121,32 +135,64 @@ function getOrSeed(projectId: string): ProjectState {
   return fresh;
 }
 
-function validatePlan(req: NonNullable<ProjectSaveRequest['plan']>): FieldError[] {
+/** Проверка плана перед сохранением. id справочника принимаются и алиасами редактора. */
+function validateScene(scene: TopologyConfig): FieldError[] {
   const errors: FieldError[] = [];
   const zoneTypes = new Set(CATEGORIES.zone_types.map((z) => z.id));
   const zoneCats = new Set(CATEGORIES.working_zones.map((z) => z.id));
   const pointKinds = new Set(CATEGORIES.point_kinds.map((k) => k.id));
-  req.plan.zones.forEach((z, i) => {
-    const path = `plan.plan.zones[${i}]`;
+  const equipCats = new Set(CATEGORIES.equipment_categories.map((c) => c.id));
+  const pointIds = new Set(scene.operation_points.map((p) => p.id));
+
+  scene.zones.forEach((z, i) => {
+    const path = `scene.zones[${i}]`;
     if (z.polygon.length < 3) errors.push({ path: `${path}.polygon`, code: 'min_points', message: `Зона «${z.name}»: нужен контур минимум из трёх точек` });
-    if (!zoneTypes.has(z.zone_type)) errors.push({ path: `${path}.zone_type`, code: 'unknown_dictionary_id', message: `Зона «${z.name}»: неизвестный тип зоны` });
-    if (z.category_id && !zoneCats.has(z.category_id)) errors.push({ path: `${path}.category_id`, code: 'unknown_dictionary_id', message: `Зона «${z.name}»: категории «${z.category_id}» нет в справочнике` });
+    if (!zoneTypes.has(resolveId('zone_types', z.zone_type) as typeof z.zone_type)) errors.push({ path: `${path}.zone_type`, code: 'unknown_dictionary_id', message: `Зона «${z.name}»: неизвестный тип зоны` });
+    if (z.category_id && !zoneCats.has(resolveId('working_zones', z.category_id))) {
+      errors.push({ path: `${path}.category_id`, code: 'unknown_dictionary_id', message: `Зона «${z.name}»: категории «${z.category_id}» нет в справочнике` });
+    }
   });
-  req.plan.operation_points.forEach((p, i) => {
-    if (!pointKinds.has(p.kind)) errors.push({ path: `plan.plan.operation_points[${i}].kind`, code: 'unknown_dictionary_id', message: `Точка ${p.id}: неизвестный вид точки` });
+
+  scene.operation_points.forEach((p, i) => {
+    if (!pointKinds.has(resolveId('point_kinds', p.kind))) {
+      errors.push({ path: `scene.operation_points[${i}].kind`, code: 'unknown_dictionary_id', message: `Точка ${p.id}: неизвестный вид точки` });
+    }
+    if (p.capacity < 1) errors.push({ path: `scene.operation_points[${i}].capacity`, code: 'min', message: `Точка ${p.id}: мест не может быть меньше одного` });
   });
-  req.plan.robots.forEach((r, i) => {
-    if (!catalogById(r.catalog_item_id)) errors.push({ path: `plan.plan.robots[${i}].catalog_item_id`, code: 'unknown_catalog_item', message: `Робот ${r.id}: такой позиции нет в каталоге` });
+
+  scene.routes.forEach((r, i) => {
+    if (r.points.length < 2) errors.push({ path: `scene.routes[${i}].points`, code: 'min_points', message: `Маршрут ${r.id}: нужны минимум две точки` });
+    for (const [field, value] of [['from_point_id', r.from_point_id], ['to_point_id', r.to_point_id]] as const) {
+      if (value && !pointIds.has(value)) {
+        errors.push({ path: `scene.routes[${i}].${field}`, code: 'unknown_point', message: `Маршрут ${r.id}: точки ${value} нет на плане` });
+      }
+    }
   });
+
+  scene.robots.forEach((r, i) => {
+    // Пустой catalog_item_id допустим: робот «вообще», без конкретной модели
+    if (r.catalog_item_id && !catalogById(r.catalog_item_id)) {
+      errors.push({ path: `scene.robots[${i}].catalog_item_id`, code: 'unknown_catalog_item', message: `Робот ${r.id}: такой позиции нет в каталоге` });
+    }
+    if (!r.catalog_item_id && r.category_id && !equipCats.has(resolveId('equipment_categories', r.category_id))) {
+      errors.push({ path: `scene.robots[${i}].category_id`, code: 'unknown_dictionary_id', message: `Робот ${r.id}: вида «${r.category_id}» нет в справочнике` });
+    }
+    if (r.charging_point_id && !pointIds.has(r.charging_point_id)) {
+      errors.push({ path: `scene.robots[${i}].charging_point_id`, code: 'unknown_point', message: `Робот ${r.id}: зарядки ${r.charging_point_id} нет на плане` });
+    }
+  });
+
   return errors;
 }
 
 // --- «Эндпоинты» ---------------------------------------------------------------
 
+/** GET /api/projects/{id} */
 export function serverGet(projectId: string): ProjectState {
   return getOrSeed(projectId);
 }
 
+/** POST /api/projects */
 export function serverCreate(req: ProjectCreateRequest): ProjectState {
   const at = now();
   const id = `p-${Date.now().toString(36)}`;
@@ -159,7 +205,7 @@ export function serverCreate(req: ProjectCreateRequest): ProjectState {
     revision: 0,
     dictionary_version: CATEGORIES.version,
     input: { state: 'missing', revision: null, saved_at: null, data: null },
-    plan: EMPTY_PLAN,
+    scene: EMPTY_SCENE,
     current_version: 1,
     created_at: at,
     updated_at: at,
@@ -168,62 +214,80 @@ export function serverCreate(req: ProjectCreateRequest): ProjectState {
   return state;
 }
 
-export function serverPatch(projectId: string, req: ProjectSaveRequest): SaveResult {
+/** PUT /api/projects/{id}/input */
+export function serverPutInput(projectId: string, req: InputSaveRequest): SaveResult {
   const current = getOrSeed(projectId);
-
   if (req.base_revision !== current.revision) return { status: 409, body: { current } };
 
-  const errors: FieldError[] = [];
-  if (!req.input && !req.plan) errors.push({ path: '', code: 'empty', message: 'Нечего сохранять: нет ни параметров, ни плана' });
-
-  if (req.input) {
-    const issues = validateParams(req.input.object_type, req.input.params as unknown as Record<string, unknown>);
-    for (const [key, issue] of Object.entries(issues)) {
-      if (issue.error) errors.push({ path: `input.params.${key}`, code: 'invalid', message: issue.error });
-    }
-  }
-
-  if (req.plan) {
-    const inputWillExist = current.input.state !== 'missing' || Boolean(req.input);
-    if (!inputWillExist) {
-      errors.push({ path: 'plan', code: 'input_required', message: 'Сначала сохраните параметры объекта — план привязывается к ним' });
-    } else {
-      errors.push(...validatePlan(req.plan));
-    }
-  }
-
+  const issues = validateParams(req.object_type, req.params as unknown as Record<string, unknown>);
+  const errors: FieldError[] = Object.entries(issues)
+    .filter(([, issue]) => issue.error)
+    .map(([key, issue]) => ({ path: `params.${key}`, code: 'invalid', message: issue.error! }));
   if (errors.length) return { status: 422, body: { errors } };
 
   const at = now();
   const revision = current.revision + 1;
-  let next: Omit<ProjectState, 'missing_parts' | 'blocking_parts'> = { ...current, revision, updated_at: at };
-
-  if (req.input) {
-    next = {
-      ...next,
-      object_type: req.input.object_type,
-      // Параметры изменились — прежний расчёт больше не соответствует им
-      status: current.status === 'archived' ? 'archived' : 'draft',
-      input: { state: 'saved', revision, saved_at: at, data: makeInput(projectId, revision, req.input.params, req.input.source, at) },
-      plan: current.plan.state === 'saved' ? { ...current.plan, state: 'stale' } : current.plan,
-    };
-  }
-
-  if (req.plan) {
-    const inputRevision = next.input.revision ?? 0;
-    next = {
-      ...next,
-      plan: {
-        state: req.plan.based_on_input_revision < inputRevision ? 'stale' : 'saved',
-        revision,
-        saved_at: at,
-        based_on_input_revision: req.plan.based_on_input_revision,
-        data: { ...req.plan.plan, id: `topo-${projectId}-${revision}`, project_id: projectId },
-      },
-    };
-  }
-
-  const saved = derive(next);
+  const saved = derive({
+    ...current,
+    revision,
+    updated_at: at,
+    object_type: req.object_type,
+    // Параметры изменились — прежний расчёт им больше не соответствует
+    status: current.status === 'archived' ? 'archived' : 'draft',
+    input: { state: 'saved', revision, saved_at: at, data: makeInput(projectId, revision, req.params, req.source, at) },
+    scene: current.scene.state === 'saved' ? { ...current.scene, state: 'stale' } : current.scene,
+  });
   useApiDb.getState().put(saved);
   return { status: 200, body: saved };
+}
+
+/** PUT /api/projects/{id}/scene */
+export function serverPutScene(projectId: string, req: SceneSaveRequest, ctx: SceneCheckContext): SaveResult {
+  const current = getOrSeed(projectId);
+  if (req.base_revision !== current.revision) return { status: 409, body: { current } };
+
+  if (current.input.state === 'missing') {
+    return {
+      status: 422,
+      body: { errors: [{ path: 'scene', code: 'input_required', message: 'Сначала сохраните параметры объекта — план привязывается к ним' }] },
+    };
+  }
+
+  const errors = validateScene(req.scene);
+  if (errors.length) return { status: 422, body: { errors } };
+
+  const at = now();
+  const revision = current.revision + 1;
+  const inputRevision = current.input.revision ?? 0;
+  const saved = derive({
+    ...current,
+    revision,
+    updated_at: at,
+    scene: {
+      state: req.based_on_input_revision < inputRevision ? 'stale' : 'saved',
+      revision,
+      saved_at: at,
+      based_on_input_revision: req.based_on_input_revision,
+      data: { ...req.scene, id: `topo-${projectId}-${revision}`, project_id: projectId },
+      warnings: checkScene(req.scene, ctx),
+    },
+  });
+  useApiDb.getState().put(saved);
+  return { status: 200, body: saved };
+}
+
+/**
+ * POST /api/projects/{id}/scene/background — загрузка подложки.
+ * Файл не хранится внутри плана: в плане остаётся ссылка.
+ * В моке вместо сервера используем локальный blob-URL.
+ */
+export function serverUploadBackground(projectId: string, file: File, size: { width: number; height: number }): BackgroundUploadResponse {
+  return {
+    background_id: `bg-${projectId}-${Date.now().toString(36)}`,
+    url: URL.createObjectURL(file),
+    width_px: size.width,
+    height_px: size.height,
+    size_bytes: file.size,
+    content_type: file.type || 'image/png',
+  };
 }

@@ -1,17 +1,26 @@
 /**
- * Клиент API проектов. Сейчас ходит в мок (mockServer.ts); при подключении
- * бэкенда здесь меняются только тела функций на fetch — сигнатуры и типы
- * уже те, что в contracts/project_state.py.
+ * Клиент API проектов. Пути — из api-routes.md (разделы 2, 3, 6, 11).
+ * Сейчас ходит в мок (mockServer.ts); при подключении бэкенда здесь меняются
+ * только тела функций на fetch — сигнатуры и типы уже те, что в
+ * contracts/project_state.py.
  */
 
 import { useEffect } from 'react';
-import type { ProjectCreateRequest, ProjectSaveRequest, ProjectState, SaveResult } from '../../shared/api/projectState';
-import { serverCreate, serverGet, serverPatch, useApiDb } from './mockServer';
+import type {
+  BackgroundUploadResponse,
+  InputSaveRequest,
+  ProjectCreateRequest,
+  ProjectState,
+  SaveResult,
+  SceneSaveRequest,
+} from '../../shared/api/projectState';
+import type { SceneCheckContext } from './sceneChecks';
+import { serverCreate, serverGet, serverPutInput, serverPutScene, serverUploadBackground, useApiDb } from './mockServer';
 
 const LATENCY_MS = 350;
 const wait = () => new Promise((r) => setTimeout(r, LATENCY_MS));
 
-function log(method: 'GET' | 'POST' | 'PATCH', url: string, request: unknown, status: number, response: unknown) {
+function log(method: 'GET' | 'POST' | 'PUT' | 'DELETE', url: string, request: unknown, status: number, response: unknown) {
   useApiDb.getState().record({ at: new Date().toISOString(), method, url, request, status, response });
 }
 
@@ -31,12 +40,48 @@ export async function createProject(req: ProjectCreateRequest): Promise<ProjectS
   return body;
 }
 
-/** PATCH /api/projects/{id} — параметры, план или обе части сразу. */
-export async function saveProject(projectId: string, req: ProjectSaveRequest): Promise<SaveResult> {
+/** PUT /api/projects/{id}/input — параметры объекта с формы (шаг 2) */
+export async function saveInput(projectId: string, req: InputSaveRequest): Promise<SaveResult> {
   await wait();
-  const result = serverPatch(projectId, req);
-  log('PATCH', `/api/projects/${projectId}`, req, result.status, result.body);
+  const result = serverPutInput(projectId, req);
+  log('PUT', `/api/projects/${projectId}/input`, req, result.status, result.body);
   return result;
+}
+
+/** PUT /api/projects/{id}/scene — план объекта из редактора (шаг 7) */
+export async function saveScene(projectId: string, req: SceneSaveRequest, ctx: SceneCheckContext): Promise<SaveResult> {
+  await wait();
+  const result = serverPutScene(projectId, req, ctx);
+  log('PUT', `/api/projects/${projectId}/scene`, req, result.status, result.body);
+  return result;
+}
+
+/**
+ * POST /api/projects/{id}/scene/background — подложка грузится отдельно,
+ * в плане остаётся только ссылка.
+ */
+export async function uploadBackground(projectId: string, file: File): Promise<BackgroundUploadResponse> {
+  const size = await imageSize(file);
+  await wait();
+  const body = serverUploadBackground(projectId, file, size);
+  log('POST', `/api/projects/${projectId}/scene/background`, { name: file.name, size_bytes: file.size, type: file.type }, 201, body);
+  return body;
+}
+
+function imageSize(file: File): Promise<{ width: number; height: number }> {
+  return new Promise((resolve) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      resolve({ width: img.naturalWidth, height: img.naturalHeight });
+      URL.revokeObjectURL(url);
+    };
+    img.onerror = () => {
+      resolve({ width: 0, height: 0 });
+      URL.revokeObjectURL(url);
+    };
+    img.src = url;
+  });
 }
 
 /** Текущее состояние записи проекта (как его последний раз вернул сервер). */

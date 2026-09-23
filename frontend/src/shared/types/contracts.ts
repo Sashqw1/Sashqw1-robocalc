@@ -233,7 +233,7 @@ export interface ScenarioInput {
 }
 
 // ---------------------------------------------------------------------------
-// План объекта (contracts/topology.md) — рисуется в редакторе на шаге 7
+// План объекта (contracts/topology.md, версия 2). В api-routes.md — Scene.
 // ---------------------------------------------------------------------------
 
 export interface Point2D {
@@ -241,8 +241,29 @@ export interface Point2D {
   y: number;
 }
 
+/** Границы объекта: прямоугольник сцены в метрах */
+export interface Bounds {
+  origin: Point2D;
+  width_m: number;
+  height_m: number;
+}
+
+/** Подложка-чертёж: в плане только ссылка, файл грузится отдельной ручкой */
+export interface SceneBackground {
+  background_id: string;
+  url: string;
+  width_px: number;
+  height_px: number;
+  /** Калибровка: сколько метров в пикселе */
+  scale_m_per_px: number;
+  offset: Point2D;
+  rotation_deg: number;
+  opacity: number;
+}
+
 export interface Wall {
   id: string;
+  name: string | null;
   points: Point2D[];
   thickness_m: number;
   tags: string[];
@@ -260,28 +281,45 @@ export interface Zone {
 
 export interface Route {
   id: string;
+  name: string | null;
   points: Point2D[];
+  /** two_way / one_way — от первой точки ломаной к последней */
+  direction: 'two_way' | 'one_way';
+  from_point_id: string | null;
+  to_point_id: string | null;
   tags: string[];
 }
 
 export interface OperationPoint {
   id: string;
+  name: string | null;
   /** id из categories.json → point_kinds */
   kind: string;
   position: Point2D;
+  /** Для зарядки — число мест */
+  capacity: number;
   tags: string[];
 }
 
 export interface RobotPlacement {
   id: string;
+  name: string | null;
+  /** Пусто допустимо: робот «вообще», без конкретной модели */
   catalog_item_id: string;
+  /** Вид робота из categories.json → equipment_categories, когда модель не выбрана */
+  category_id: string | null;
   start_position: Point2D;
+  start_rotation_deg: number;
+  charging_point_id: string | null;
 }
 
+/** TopologyConfig, он же Scene в api-routes.md */
 export interface TopologyConfig {
   id: string;
   project_id: string;
   scale_m_per_unit: number;
+  bounds: Bounds | null;
+  background: SceneBackground | null;
   walls: Wall[];
   zones: Zone[];
   routes: Route[];
