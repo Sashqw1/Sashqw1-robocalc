@@ -10,6 +10,8 @@ import type { ObjectType, ZoneType } from '../types/contracts';
 export interface DictItem {
   id: string;
   label: string;
+  /** Как то же значение называется в справочнике редактора (транслит) */
+  aliases?: string[];
 }
 
 export interface WorkingZoneItem extends DictItem {
@@ -59,7 +61,8 @@ export function optionsOf(section: DictSection): { value: string; label: string 
 /** Подпись по id; для «своих» значений — сам текст без префикса. */
 export function labelOf(section: DictSection, id: string): string {
   if (id.startsWith(CUSTOM_PREFIX)) return id.slice(CUSTOM_PREFIX.length);
-  return (CATEGORIES[section] as DictItem[]).find((i) => i.id === id)?.label ?? id;
+  const items = CATEGORIES[section] as DictItem[];
+  return (items.find((i) => i.id === id) ?? items.find((i) => i.aliases?.includes(id)))?.label ?? id;
 }
 
 export function workingZone(id: string): WorkingZoneItem | undefined {
@@ -70,4 +73,16 @@ export function zoneType(id: ZoneType): ZoneTypeItem {
   return CATEGORIES.zone_types.find((z) => z.id === id) ?? CATEGORIES.zone_types[0];
 }
 
-export const solutionTypeLabel = (id: string) => labelOf('equipment_categories', id);
+/**
+ * Главный id по значению: принимает и наш id, и алиас из справочника
+ * редактора (zona_priemki → receiving, robot_shtabeler → stacker).
+ * Неизвестное значение возвращается как есть — его покажем как «своё».
+ */
+export function resolveId(section: DictSection, value: string): string {
+  const items = CATEGORIES[section] as DictItem[];
+  if (items.some((i) => i.id === value)) return value;
+  const byAlias = items.find((i) => i.aliases?.includes(value));
+  return byAlias?.id ?? value;
+}
+
+export const solutionTypeLabel = (id: string) => labelOf('equipment_categories', resolveId('equipment_categories', id));

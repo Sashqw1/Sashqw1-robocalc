@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { saveProject, useProjectState } from '../../../features/projectApi';
+import { saveInput, useProjectState } from '../../../features/projectApi';
 import type { FieldError } from '../../../shared/api/projectState';
 import type { ObjectParams } from '../../../shared/types/contracts';
 import { Navigate } from 'react-router-dom';
@@ -12,7 +12,7 @@ import {
 import type { ParamField, ParamValues } from '../../../features/wizard/paramsSchema';
 import { DEMO_WAREHOUSE_PARAMS } from '../../../shared/mock/projects';
 import { objectTypeLabel } from '../../../shared/mock/dictionaries';
-import { pluralize } from '../../../shared/lib/format';
+import { formatRub, pluralize } from '../../../shared/lib/format';
 import { Alert, Button, ComboField, Field, NumberField, Progress, Segmented, SelectField, TagsField, TextField } from '../../../shared/ui';
 import { useWizard } from '../context';
 import { WizardFooter } from '../WizardFooter';
@@ -107,7 +107,14 @@ export function StepParams() {
       wide: f.wide,
       onFocusCapture: () => setFocusedKey(f.key),
     };
-    const v = values[f.key];
+    let v = values[f.key];
+
+    // Стоимость персонала в ТЗ названа «в месяц», в контракте — на одного
+    // сотрудника. Показываем рядом месячный фонд на всех, чтобы ошибка была видна сразу.
+    if (f.key === 'staff_cost_per_month' && typeof v === 'number' && typeof values.staff_count === 'number') {
+      const fund = v * (values.staff_count as number);
+      common.hint = `на одного человека, с налогами · на всех выходит ${formatRub(fund)} в месяц`;
+    }
 
     switch (f.kind) {
       case 'number':
@@ -257,7 +264,7 @@ export function StepParams() {
             Загружена актуальная запись проекта. Проверьте поля и нажмите «Далее» ещё раз.
           </Alert>
         )}
-        {!isDemo && server && server.plan.state !== 'missing' && (
+        {!isDemo && server && server.scene.state !== 'missing' && (
           <Alert tone="info" title="У проекта уже есть план объекта">
             Если поменять площадь или рабочие зоны, план на шаге 7 будет помечен как устаревший — он не удалится.
           </Alert>
@@ -350,9 +357,12 @@ export function StepParams() {
                 setSaving(true);
                 setServerErrors([]);
                 setConflict(false);
-                const res = await saveProject(projectId, {
+                // PUT /api/projects/{id}/input — параметры уходят в ту же запись проекта
+                const res = await saveInput(projectId, {
                   base_revision: server.revision,
-                  input: { object_type: type, params: { ...values, object_type: type } as unknown as ObjectParams, source: 'manual' },
+                  object_type: type,
+                  params: { ...values, object_type: type } as unknown as ObjectParams,
+                  source: 'manual',
                 });
                 setSaving(false);
                 if (res.status === 200) next();

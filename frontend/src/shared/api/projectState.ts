@@ -1,34 +1,36 @@
 /**
  * Единая запись проекта: параметры с формы (шаг 2) и план из редактора
- * (шаг 7) — две части одного запроса/ответа. Зеркало contracts/project_state.py.
- * Сценарии и решения: docs/integration/editor-and-api.md.
+ * (шаг 7) — две части одной записи, приходят в разное время.
+ * Зеркало contracts/project_state.py. Маршруты — api-routes.md, разделы 3, 6, 11:
+ *
+ *   PUT  /api/projects/{id}/input
+ *   PUT  /api/projects/{id}/scene
+ *   POST /api/projects/{id}/scene/background   (multipart)
  */
 
 import type { ObjectParams, ObjectType, ProjectInput, ProjectStatus, TopologyConfig } from '../types/contracts';
 
 export type PartState = 'missing' | 'saved' | 'stale';
-export type ProjectPart = 'input' | 'plan';
+export type ProjectPart = 'input' | 'scene';
 
-// --- Запрос: PATCH /api/projects/{project_id} ---------------------------------
+// --- Запросы -----------------------------------------------------------------
 
-export interface InputPayload {
+/** PUT /api/projects/{id}/input */
+export interface InputSaveRequest {
+  /** ProjectState.revision, которую клиент видел последней */
+  base_revision: number;
   object_type: ObjectType;
   params: ObjectParams;
   source: 'manual' | 'excel_import' | 'csv_import';
 }
 
-export interface PlanPayload {
-  /** input.revision, по которому рисовался план */
+/** PUT /api/projects/{id}/scene */
+export interface SceneSaveRequest {
+  base_revision: number;
+  /** input.revision, по которому рисовали план */
   based_on_input_revision: number;
   /** id и project_id внутри сервер перезаписывает сам */
-  plan: TopologyConfig;
-}
-
-export interface ProjectSaveRequest {
-  /** ProjectState.revision, которую клиент видел последней */
-  base_revision: number;
-  input?: InputPayload;
-  plan?: PlanPayload;
+  scene: TopologyConfig;
 }
 
 /** POST /api/projects */
@@ -38,7 +40,40 @@ export interface ProjectCreateRequest {
   site?: string | null;
 }
 
-// --- Ответ: GET / POST / PATCH ------------------------------------------------
+// --- Предупреждения по плану --------------------------------------------------
+
+export type WarningSeverity = 'info' | 'warning' | 'error';
+
+export type SceneWarningCode =
+  | 'route_crosses_wall'
+  | 'robot_in_restricted_zone'
+  | 'aisle_too_narrow'
+  | 'zone_outside_bounds'
+  | 'route_not_linked'
+  | 'charging_capacity_exceeded'
+  | 'scene_area_differs_from_form';
+
+/** Считает сервер — чтобы редактор, симуляция и отчёт показывали одно и то же */
+export interface SceneWarning {
+  code: SceneWarningCode;
+  severity: WarningSeverity;
+  message: string;
+  target_kind: 'wall' | 'zone' | 'route' | 'point' | 'robot' | null;
+  target_id: string | null;
+}
+
+// --- Подложка -----------------------------------------------------------------
+
+export interface BackgroundUploadResponse {
+  background_id: string;
+  url: string;
+  width_px: number;
+  height_px: number;
+  size_bytes: number;
+  content_type: string;
+}
+
+// --- Ответ --------------------------------------------------------------------
 
 export interface InputPartState {
   state: PartState;
@@ -47,12 +82,13 @@ export interface InputPartState {
   data: ProjectInput | null;
 }
 
-export interface PlanPartState {
+export interface ScenePartState {
   state: PartState;
   revision: number | null;
   saved_at: string | null;
   based_on_input_revision: number | null;
   data: TopologyConfig | null;
+  warnings: SceneWarning[];
 }
 
 export interface ProjectState {
@@ -64,10 +100,10 @@ export interface ProjectState {
   revision: number;
   dictionary_version: number;
   input: InputPartState;
-  plan: PlanPartState;
-  /** ["plan"] — черновик без плана, нормальное промежуточное состояние */
+  scene: ScenePartState;
+  /** ["scene"] — черновик без плана, нормальное промежуточное состояние */
   missing_parts: ProjectPart[];
-  /** Без чего нельзя считать подбор и экономику. План сюда не входит — шаг 7 необязательный */
+  /** Без чего нельзя считать подбор и экономику. Плана тут нет — шаг 7 необязательный */
   blocking_parts: ProjectPart[];
   current_version: number;
   created_at: string;
