@@ -136,15 +136,18 @@ export function checkScene(scene: TopologyConfig, ctx: SceneCheckContext): Scene
     }
   }
 
-  // 6. К зарядке привязано больше роботов, чем у неё мест
+  // 6. Очередь на зарядку: роботы заряжаются по очереди, но если на место
+  // приходится больше ROBOTS_PER_SLOT роботов, мест не хватит по времени
+  const ROBOTS_PER_SLOT = 4;
   const charging = scene.operation_points.filter((p) => p.kind === 'charging');
   for (const point of charging) {
     const linked = scene.robots.filter((r) => r.charging_point_id === point.id).length;
-    if (linked > point.capacity) {
+    if (linked > point.capacity * ROBOTS_PER_SLOT) {
+      const perSlot = (linked / point.capacity).toFixed(1).replace('.', ',');
       out.push({
         code: 'charging_capacity_exceeded',
         severity: 'warning',
-        message: `К зарядке ${nameOf(point.name, point.id)} привязано ${linked} роботов, а мест ${point.capacity}`,
+        message: `К зарядке ${nameOf(point.name, point.id)} привязано ${linked} роботов на ${point.capacity} мест — ${perSlot} робота на место, будет очередь`,
         target_kind: 'point',
         target_id: point.id,
       });

@@ -13,3 +13,6 @@ desktop.ini
 .vscode/*
 !.vscode/extensions.json
 .idea/
+
+# архив базы уязвимостей от практики, в репозиторий не нужен
+scanoval.zip

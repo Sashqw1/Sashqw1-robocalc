@@ -84,7 +84,8 @@ export function autoLayout(projectId: string, ctx: PlanEditorContext): TopologyC
     kind: 'charging',
     // Зарядка — у нижнего края зоны: сверху подпись и стоянка роботов
     position: { x: cx + cw / 2, y: cBottom - 3 },
-    capacity: Math.max(1, Math.min(robotsFlat.length, perRow)),
+    // Одно место зарядки на четырёх роботов — столько успевает обслужить станция
+    capacity: Math.max(1, Math.ceil(robotsFlat.length / 4)),
     tags: [],
   };
 
