@@ -17,7 +17,7 @@ class ScenarioInput(BaseModel):
     match_result_id: str
     scenario_kind: ScenarioKind
     financing_type: FinancingType = FinancingType.OWN_FUNDS
-    staff_cost_per_month: float = Field(..., description="₽/мес на замещаемый персонал")
+    staff_cost_per_month: float = Field(..., description="₽/мес на весь замещаемый персонал, как в ТЗ")
     operating_hours_per_year: float
     load_factor: float = Field(..., ge=0, le=1)
     horizon_years: float = Field(5, ge=5, description="Горизонт TCO, лет, минимум 5 по ТЗ")

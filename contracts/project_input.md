@@ -20,7 +20,7 @@
 | unit_load_weight_kg | float | да | Масса грузовой единицы, кг |
 | unit_load_dimensions_mm | str | да | Габариты грузовой единицы, мм |
 | staff_count | int | да | Численность персонала |
-| staff_cost_per_month | float | да | ₽/мес на одного сотрудника |
+| staff_cost_per_month | float | да | ₽/мес на **весь** замещаемый персонал (формулировка ТЗ), не на одного сотрудника |
 | current_throughput_per_hour | float | да | Текущая производительность, операций/час |
 | route_length_m | float | да | Протяжённость маршрутов, м |
 | available_area_sqm | float \| null | null | Доступная площадь под роботизацию, м² |
@@ -39,7 +39,7 @@
 | unit_weight_kg | float | да | Масса объекта, кг |
 | unit_dimensions_mm | str | да | Габариты объекта, мм |
 | staff_count | int | да | Численность персонала |
-| staff_cost_per_month | float | да | ₽/мес на одного сотрудника |
+| staff_cost_per_month | float | да | ₽/мес на **весь** замещаемый персонал (формулировка ТЗ), не на одного сотрудника |
 | safety_requirements | list[str] | [] | Требования безопасности |
 | zone_access | str | да | `closed` / `open` |
 
@@ -54,7 +54,7 @@
 | routes_and_elevators | list[str] | [] | Маршруты и лифты |
 | sanitary_requirements | list[str] | [] | Санитарные требования |
 | staff_count | int | да | Численность персонала |
-| staff_cost_per_month | float | да | ₽/мес на одного сотрудника |
+| staff_cost_per_month | float | да | ₽/мес на **весь** замещаемый персонал (формулировка ТЗ), не на одного сотрудника |
 | access_restrictions | list[str] | [] | Ограничения доступа/безопасности |
 
 ## ProjectInput (корневая модель)

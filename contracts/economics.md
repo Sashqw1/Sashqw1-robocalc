@@ -11,7 +11,7 @@
 | match_result_id | str | да | Ссылка на результат подбора (MatchResult) |
 | scenario_kind | ScenarioKind | да | `baseline` / `purchase` / `raas` / `custom` |
 | financing_type | FinancingType | `own_funds` | Способ финансирования |
-| staff_cost_per_month | float | да | ₽/мес на замещаемый персонал |
+| staff_cost_per_month | float | да | ₽/мес на весь замещаемый персонал (как в ТЗ) |
 | operating_hours_per_year | float | да | Часы работы в год |
 | load_factor | float | да | Коэффициент загрузки, 0..1 |
 | horizon_years | float | `5` | Горизонт TCO, лет, минимум 5 по ТЗ |

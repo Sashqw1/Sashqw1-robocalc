@@ -10,7 +10,7 @@ pydantic/FastAPI — единственный файл контрактов, к�
 | equipment_cost_total | float | да | CAPEX на оборудование, ₽ |
 | software_cost_total | float | да | CAPEX на ПО, ₽ |
 | implementation_cost_total | float | да | CAPEX на внедрение/интеграцию, ₽ |
-| staff_cost_per_month | float | да | Стоимость замещаемого персонала, ₽/мес |
+| staff_cost_per_month | float | да | Стоимость всего замещаемого персонала, ₽/мес (как в ТЗ) |
 | operating_hours_per_year | float | да | Часы работы оборудования в год |
 | load_factor | float | да | Коэффициент загрузки оборудования, 0..1 |
 | horizon_years | float | да | Горизонт расчёта TCO, лет (≥ 5 по ТЗ) |

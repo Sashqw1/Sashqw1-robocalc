@@ -28,7 +28,7 @@ class WarehouseParams(BaseModel):
     unit_load_weight_kg: float
     unit_load_dimensions_mm: str
     staff_count: int
-    staff_cost_per_month: float = Field(..., description="₽/мес на одного сотрудника")
+    staff_cost_per_month: float = Field(..., description="Стоимость всего замещаемого персонала, ₽/мес (как в ТЗ), не на одного сотрудника")
     current_throughput_per_hour: float
     route_length_m: float
     available_area_sqm: Optional[float] = None
@@ -47,7 +47,7 @@ class AirportParams(BaseModel):
     unit_weight_kg: float
     unit_dimensions_mm: str
     staff_count: int
-    staff_cost_per_month: float
+    staff_cost_per_month: float = Field(..., description="Стоимость всего замещаемого персонала, ₽/мес (как в ТЗ), не на одного сотрудника")
     safety_requirements: list[str] = Field(default_factory=list)
     zone_access: str = Field(..., description="closed / open")
 
@@ -64,7 +64,7 @@ class MedicalParams(BaseModel):
     routes_and_elevators: list[str] = Field(default_factory=list)
     sanitary_requirements: list[str] = Field(default_factory=list)
     staff_count: int
-    staff_cost_per_month: float
+    staff_cost_per_month: float = Field(..., description="Стоимость всего замещаемого персонала, ₽/мес (как в ТЗ), не на одного сотрудника")
     access_restrictions: list[str] = Field(default_factory=list)
 
 
