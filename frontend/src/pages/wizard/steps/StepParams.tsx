@@ -31,7 +31,7 @@ const DEMO_VALUES: Record<string, ParamValues> = {
     unit_dimensions_mm: '3000×1500×1600',
     route_length_m: 1200,
     staff_count: 60,
-    staff_cost_per_month: 88_000,
+    staff_cost_per_month: 5_280_000,
     safety_requirements: ['security_check', 'speed_6kmh'],
   },
   medical: {
@@ -42,7 +42,7 @@ const DEMO_VALUES: Record<string, ParamValues> = {
     cargo_volume_per_day: { linen: 60, food: 90, drugs: 140, waste: 45 },
     routes_and_elevators: ['freight_elevator_each', 'tunnel'],
     staff_count: 38,
-    staff_cost_per_month: 62_000,
+    staff_cost_per_month: 2_356_000,
     sanitary_requirements: ['clean_dirty_split', 'closed_containers'],
     access_restrictions: ['operating_block'],
   },
@@ -109,11 +109,11 @@ export function StepParams() {
     };
     let v = values[f.key];
 
-    // Стоимость персонала в ТЗ названа «в месяц», в контракте — на одного
-    // сотрудника. Показываем рядом месячный фонд на всех, чтобы ошибка была видна сразу.
-    if (f.key === 'staff_cost_per_month' && typeof v === 'number' && typeof values.staff_count === 'number') {
-      const fund = v * (values.staff_count as number);
-      common.hint = `на одного человека, с налогами · на всех выходит ${formatRub(fund)} в месяц`;
+    // Как в ТЗ: это расходы на весь персонал за месяц. Показываем рядом,
+    // сколько выходит на одного, — так сразу видно, если ввели зарплату одного.
+    if (f.key === 'staff_cost_per_month' && typeof v === 'number' && typeof values.staff_count === 'number' && (values.staff_count as number) > 0) {
+      const perPerson = v / (values.staff_count as number);
+      common.hint = `на весь персонал, с налогами · это ${formatRub(perPerson)} на одного человека`;
     }
 
     switch (f.kind) {

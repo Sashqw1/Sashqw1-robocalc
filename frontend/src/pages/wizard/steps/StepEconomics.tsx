@@ -61,7 +61,7 @@ export function StepEconomics() {
               <div className="stack">
                 <NumberField label="Часы работы в год" required unit="ч/год" value={econ.hoursPerYear} error={issues.hours} hint="24/7 — это 8 760 ч" onChange={(n) => setEcon({ hoursPerYear: n ?? 0 })} />
                 <NumberField label="Коэффициент загрузки" required unit="0…1" value={econ.loadFactor} error={issues.load} hint="доля времени, когда техника занята" onChange={(n) => setEcon({ loadFactor: n ?? 0 })} />
-                <NumberField label="Стоимость замещаемого персонала" required unit="₽/мес" value={econ.staffCostPerMonth} error={issues.staff} hint="на одного сотрудника, с налогами" onChange={(n) => setEcon({ staffCostPerMonth: n ?? 0 })} />
+                <NumberField label="Стоимость замещаемого персонала" required unit="₽/мес" value={econ.staffCostPerMonth} error={issues.staff} hint="на весь персонал за месяц, как в ТЗ" onChange={(n) => setEcon({ staffCostPerMonth: n ?? 0 })} />
                 <NumberField label="Горизонт расчёта TCO" required unit="лет" value={econ.horizonYears} error={issues.horizon} onChange={(n) => setEcon({ horizonYears: n ?? 0 })} />
                 <SelectField
                   label="Способ финансирования"

@@ -123,7 +123,7 @@ export function StepScenarios() {
                 <NumberField label="Ставка" unit="% годовых" value={editDef.creditRatePct ?? null} onChange={(n) => patch(editDef.id, { creditRatePct: n ?? undefined })} />
               )}
               <NumberField label="Коэффициент загрузки" unit="0…1" value={editDef.loadFactor ?? draft.economics.loadFactor} hint="по умолчанию — из шага «Экономика»" onChange={(n) => patch(editDef.id, { loadFactor: n ?? undefined })} />
-              <NumberField label="Стоимость персонала" unit="₽/мес" value={editDef.staffCostPerMonth ?? draft.economics.staffCostPerMonth} onChange={(n) => patch(editDef.id, { staffCostPerMonth: n ?? undefined })} />
+              <NumberField label="Стоимость персонала (на всех)" unit="₽/мес" value={editDef.staffCostPerMonth ?? draft.economics.staffCostPerMonth} onChange={(n) => patch(editDef.id, { staffCostPerMonth: n ?? undefined })} />
               <NumberField label="Изменение цены оборудования" unit="%" value={editDef.equipmentPriceDeltaPct ?? 0} hint="например −10 при скидке поставщика" onChange={(n) => patch(editDef.id, { equipmentPriceDeltaPct: n ?? 0 })} />
             </div>
           </Card>

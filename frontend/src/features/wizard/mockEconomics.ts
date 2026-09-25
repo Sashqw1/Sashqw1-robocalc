@@ -70,7 +70,8 @@ export function computeScenario(draft: Draft, def: ScenarioDef): EconomicsResult
   const staffCount = num(p.staff_count, 46);
   const hoursPerDay = Math.max(1, econ.hoursPerYear / 365);
 
-  const staffBaseline = staffCount * staffCost * 12;
+  // Как в ТЗ: staff_cost_per_month — расходы на весь персонал за месяц
+  const staffBaseline = staffCost * 12;
   const opexBaseline = staffBaseline + OTHER_OPEX_BASELINE;
 
   const base: EconomicsResult = {
@@ -160,7 +161,7 @@ export function computeScenario(draft: Draft, def: ScenarioDef): EconomicsResult
       `Горизонт ${horizon} лет.`,
       `Резерв в CAPEX ${RESERVE * 100} %.`,
       `Тариф электроэнергии ${ENERGY_TARIFF.toString().replace('.', ',')} ₽/кВт·ч.`,
-      `Стоимость персонала ${new Intl.NumberFormat('ru-RU').format(staffCost)} ₽/мес.`,
+      `Стоимость всего персонала ${new Intl.NumberFormat('ru-RU').format(staffCost)} ₽/мес (${staffCount} чел.).`,
       `Коэффициент загрузки ${load.toString().replace('.', ',')}.`,
       `Роботы берут на себя ${Math.round(share * 100)} % операций персонала.`,
       def.financing === 'credit' ? `Кредит ${def.creditRatePct ?? 18} % годовых, проценты в OPEX.` : '',

@@ -16,26 +16,20 @@ const rect = (x: number, y: number, w: number, h: number) => [
   { x, y: y + h },
 ];
 
-/** Площадь по умолчанию, когда её нет в форме, м² */
-const FALLBACK_AREA = 5000;
+/** Стандартный размер черновика, когда площади в форме нет (аэропорт), м */
+const DEFAULT_SIZE = { width: 100, depth: 60 };
 
 /**
- * Размер объекта для черновика. У аэропорта в форме площади нет (её нет и в
- * ТЗ), поэтому берём её из протяжённости маршрутов, а если и её нет —
- * рисуем стандартный прямоугольник и говорим об этом пользователю.
+ * Размер объекта для черновика. У аэропорта площади в форме нет — её нет и в
+ * ТЗ, — поэтому рисуем стандартный прямоугольник, а пользователь растянет
+ * границы на плане под свой объект (решение от 25.09.2026).
  */
-export function estimateSize(ctx: PlanEditorContext): { width: number; depth: number; source: 'area' | 'routes' | 'default' } {
+export function estimateSize(ctx: PlanEditorContext): { width: number; depth: number; source: 'area' | 'default' } {
   if (ctx.areaSqm && ctx.areaSqm > 0) {
     const width = Math.round(Math.sqrt((ctx.areaSqm * 5) / 3));
     return { width, depth: Math.round(ctx.areaSqm / width), source: 'area' };
   }
-  if (ctx.routeLengthM && ctx.routeLengthM > 0) {
-    // Маршруты идут вдоль объекта: длина маршрута ≈ длинная сторона
-    const width = Math.round(ctx.routeLengthM);
-    return { width, depth: Math.max(30, Math.round(width / 3)), source: 'routes' };
-  }
-  const width = Math.round(Math.sqrt((FALLBACK_AREA * 5) / 3));
-  return { width, depth: Math.round(FALLBACK_AREA / width), source: 'default' };
+  return { ...DEFAULT_SIZE, source: 'default' };
 }
 
 export function autoLayout(projectId: string, ctx: PlanEditorContext): TopologyConfig {

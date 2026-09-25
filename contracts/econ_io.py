@@ -14,7 +14,7 @@ class EconInput:
     equipment_cost_total: float  # CAPEX на оборудование, ₽
     software_cost_total: float
     implementation_cost_total: float
-    staff_cost_per_month: float  # стоимость замещаемого персонала, ₽/мес
+    staff_cost_per_month: float  # стоимость ВСЕГО замещаемого персонала, ₽/мес (как в ТЗ)
     operating_hours_per_year: float
     load_factor: float  # 0..1, коэффициент загрузки оборудования
     horizon_years: float  # горизонт TCO, лет (>= 5 по ТЗ)

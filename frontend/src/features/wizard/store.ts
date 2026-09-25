@@ -47,7 +47,7 @@ export interface Draft {
 const DEFAULT_ECON: EconomicsInputs = {
   hoursPerYear: 8760,
   loadFactor: 0.75,
-  staffCostPerMonth: 95_000,
+  staffCostPerMonth: 4_370_000,
   horizonYears: 5,
   financing: 'own_funds',
 };

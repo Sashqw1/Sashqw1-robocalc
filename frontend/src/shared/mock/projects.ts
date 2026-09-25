@@ -104,7 +104,7 @@ export const DEMO_WAREHOUSE_PARAMS: WarehouseParams = {
   unit_load_weight_kg: 450,
   unit_load_dimensions_mm: '1200×800×1450',
   staff_count: 46,
-  staff_cost_per_month: 95_000,
+  staff_cost_per_month: 4_370_000,
   current_throughput_per_hour: 120,
   route_length_m: 1800,
   available_area_sqm: 4200,
